@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ReLak | Madhan Kumar Portfolio</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Inter:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "secondary-fixed": "#6bff8f",
+                "surface-container-highest": "#e2e2e2",
+                "on-error": "#ffffff",
+                "tertiary-fixed": "#d3e4fe",
+                "on-tertiary-container": "#8c9cb5",
+                "on-secondary-fixed": "#002109",
+                "on-tertiary": "#ffffff",
+                "on-primary-fixed": "#001b3c",
+                "surface-bright": "#f9f9f9",
+                "on-background": "#1a1c1c",
+                "primary-container": "#003366",
+                "tertiary-fixed-dim": "#b7c8e1",
+                "on-primary-fixed-variant": "#1f477b",
+                "on-surface-variant": "#43474f",
+                "surface-container-lowest": "#ffffff",
+                "surface-container-low": "#f3f3f3",
+                "surface-container-high": "#e8e8e8",
+                "surface-container": "#eeeeee",
+                "primary": "#001e40",
+                "inverse-surface": "#2f3131",
+                "surface-tint": "#3a5f94",
+                "surface-variant": "#e2e2e2",
+                "tertiary-container": "#243448",
+                "inverse-on-surface": "#f1f1f1",
+                "primary-fixed": "#d5e3ff",
+                "secondary": "#006e2f",
+                "on-secondary": "#ffffff",
+                "on-primary-container": "#799dd6",
+                "error-container": "#ffdad6",
+                "on-primary": "#ffffff",
+                "secondary-fixed-dim": "#4ae176",
+                "on-surface": "#1a1c1c",
+                "on-tertiary-fixed": "#0b1c30",
+                "tertiary": "#0e1f32",
+                "background": "#f9f9f9",
+                "on-secondary-container": "#007432",
+                "on-error-container": "#93000a",
+                "error": "#ba1a1a",
+                "surface": "#f9f9f9",
+                "inverse-primary": "#a7c8ff",
+                "surface-dim": "#dadada",
+                "on-tertiary-fixed-variant": "#38485d",
+                "outline": "#737780",
+                "on-secondary-fixed-variant": "#005321",
+                "outline-variant": "#c3c6d1",
+                "secondary-container": "#6bff8f",
+                "primary-fixed-dim": "#a7c8ff"
+              },
+              fontFamily: {
+                "headline": ["Space Grotesk"],
+                "body": ["Inter"],
+                "label": ["JetBrains Mono"]
+              },
+              borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .grid-bg {
+            background-image: radial-gradient(circle, #001e4010 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .glass-nav {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-slate-50/70 backdrop-blur-xl border-b border-slate-200/50 flex justify-between items-center px-6 py-4 max-w-full mx-auto shadow-sm">
+<div class="flex items-center gap-8">
+<span class="font-['Space_Grotesk'] font-bold text-2xl tracking-tighter text-[#003366]">ReLak</span>
+<div class="hidden md:flex gap-6 items-center">
+<a class="font-['JetBrains_Mono'] text-sm tracking-tighter text-[#003366] border-b-2 border-[#003366] pb-1 transition-all duration-200 ease-in-out active:scale-95" href="#experience">Experience</a>
+<a class="font-['JetBrains_Mono'] text-sm tracking-tighter text-slate-500 hover:text-[#003366] transition-colors pb-1 transition-all duration-200 ease-in-out active:scale-95" href="#projects">Projects</a>
+<a class="font-['JetBrains_Mono'] text-sm tracking-tighter text-slate-500 hover:text-[#003366] transition-colors pb-1 transition-all duration-200 ease-in-out active:scale-95" href="#education">Education</a>
+</div>
+</div>
+<div class="flex items-center gap-4 text-[#003366]">
+<button class="material-symbols-outlined hover:bg-slate-100/50 p-2 rounded transition-all duration-200 ease-in-out active:scale-95">settings</button>
+<button class="material-symbols-outlined hover:bg-slate-100/50 p-2 rounded transition-all duration-200 ease-in-out active:scale-95">account_circle</button>
+</div>
+</nav>
+<main class="pt-32 pb-20 px-6 max-w-6xl mx-auto grid-bg min-h-screen">
+<!-- Hero Section / Identity -->
+<header class="mb-24 flex flex-col md:flex-row md:items-end justify-between gap-12">
+<div class="max-w-2xl">
+<div class="flex items-center gap-3 mb-6">
+<span class="font-label text-xs uppercase tracking-[0.2em] text-on-surface-variant bg-surface-container px-2 py-1">[ 01_IDENTITY ]</span>
+</div>
+<h1 class="font-headline text-6xl md:text-8xl font-bold tracking-tighter leading-none mb-6 text-primary">
+                    Madhan<br/>Kumar
+                </h1>
+<p class="font-label text-lg text-primary-container/80 max-w-lg leading-relaxed">
+                    Systems Architect and Full-Stack Engineer focused on building high-performance technical infrastructures.
+                </p>
+</div>
+<div class="w-48 h-48 bg-surface-container-highest flex-shrink-0 relative">
+<img class="w-full h-full object-cover grayscale contrast-125" data-alt="Modern professional portrait of a tech professional in a clean studio environment with minimalist architectural background and soft natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAnWFPwThWmElRv0KzZx3HtyfF4lNIAzlL1z0VimlLQ5hO0qK9NGKkhViDSB204okeUdzwlUo0E1wsfG1wKl2ZI2qfmnRFTlZf_hY3kpFHGLPwvJ4LKdY55Tyh8Oq2noeFVO3yLDZW8reyqBO7QJLL2Hka5WhmRWJv4FTitLub27W-DaQkGUD0H2YP_-w34Ut29ztEfhkN8IXtgF6xxV0qB_hBxzpTUnq0Yo4dXO89z_Q-dh1cLm5kd5Xnk-LoeqBMbAflpL6dWCsr"/>
+<div class="absolute -bottom-2 -right-2 bg-secondary text-on-secondary font-label text-[10px] p-2">
+                    AVAIL: NOW
+                </div>
+</div>
+</header>
+<!-- Technical Skillset (Bento Style) -->
+<section class="mb-32">
+<div class="flex items-center gap-4 mb-8">
+<h2 class="font-headline text-2xl font-bold tracking-tight text-primary">Technical_Skillset</h2>
+<div class="h-px flex-grow bg-outline-variant/30"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+<div class="col-span-1 md:col-span-2 bg-surface-container-lowest p-8 border-l-4 border-primary">
+<span class="material-symbols-outlined text-primary mb-4" style="font-size: 32px;">terminal</span>
+<h3 class="font-label font-bold text-primary mb-4">Core Architecture</h3>
+<div class="flex flex-wrap gap-2">
+<span class="font-label text-[11px] bg-surface-container px-2 py-1 border border-outline-variant/20">TypeScript</span>
+<span class="font-label text-[11px] bg-surface-container px-2 py-1 border border-outline-variant/20">Rust</span>
+<span class="font-label text-[11px] bg-surface-container px-2 py-1 border border-outline-variant/20">GoLang</span>
+<span class="font-label text-[11px] bg-surface-container px-2 py-1 border border-outline-variant/20">Distributed Systems</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-8">
+<span class="material-symbols-outlined text-primary mb-4">database</span>
+<h3 class="font-label font-bold text-primary mb-2">Databases</h3>
+<p class="font-body text-sm text-on-surface-variant">PostgreSQL, Redis, Vector DBs, Cassandra.</p>
+</div>
+<div class="bg-surface-container-low p-8">
+<span class="material-symbols-outlined text-primary mb-4">cloud</span>
+<h3 class="font-label font-bold text-primary mb-2">Infrastructure</h3>
+<p class="font-body text-sm text-on-surface-variant">AWS, Kubernetes, Terraform, CI/CD.</p>
+</div>
+</div>
+</section>
+<!-- Experience Section (Drafting Style) -->
+<section class="mb-32" id="experience">
+<div class="flex items-center gap-4 mb-12">
+<h2 class="font-headline text-2xl font-bold tracking-tight text-primary">02_Experience_Log</h2>
+<div class="h-px flex-grow bg-outline-variant/30"></div>
+</div>
+<div class="space-y-16">
+<!-- Entry 01 -->
+<div class="grid md:grid-cols-[200px_1fr] gap-8 relative">
+<div class="font-label text-sm text-outline">
+                        2022 — PRESENT
+                        <div class="mt-2 text-[10px] text-secondary flex items-center gap-1">
+<span class="w-1.5 h-1.5 bg-secondary rounded-full"></span> ACTIVE_ROLE
+                        </div>
+</div>
+<div class="bg-surface-container-lowest p-8 shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-headline text-xl font-bold text-primary">Senior Systems Engineer</h3>
+<p class="font-label text-primary-container text-sm">TechNova Systems</p>
+</div>
+<span class="font-label text-[10px] opacity-40">[ REF: TN-082 ]</span>
+</div>
+<p class="text-on-surface-variant mb-6 leading-relaxed">
+                            Leading the migration of legacy monolithic architectures to microservices. Improved system latency by 45% using gRPC and customized caching layers. Architecting high-availability systems handling 10k+ requests/sec.
+                        </p>
+<div class="flex gap-4">
+<span class="font-label text-[10px] uppercase text-outline">#Scaling</span>
+<span class="font-label text-[10px] uppercase text-outline">#CloudNative</span>
+</div>
+</div>
+</div>
+<!-- Entry 02 -->
+<div class="grid md:grid-cols-[200px_1fr] gap-8 relative">
+<div class="font-label text-sm text-outline">2020 — 2022</div>
+<div class="bg-surface-container-low p-8">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-headline text-xl font-bold text-primary">Backend Developer</h3>
+<p class="font-label text-primary-container text-sm">FlowState Digital</p>
+</div>
+<span class="font-label text-[10px] opacity-40">[ REF: FS-441 ]</span>
+</div>
+<p class="text-on-surface-variant mb-6 leading-relaxed">
+                            Developed and maintained RESTful APIs using Node.js and Python. Implemented real-time data processing pipelines using Apache Kafka for financial tracking dashboards.
+                        </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Projects Grid -->
+<section class="mb-32" id="projects">
+<div class="flex items-center gap-4 mb-12">
+<h2 class="font-headline text-2xl font-bold tracking-tight text-primary">03_Project_Schematics</h2>
+<div class="h-px flex-grow bg-outline-variant/30"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Project Card -->
+<div class="group cursor-pointer">
+<div class="aspect-video bg-surface-container relative overflow-hidden mb-4">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 grayscale" data-alt="Clean visualization of a technical dashboard with blue lines and architectural grids, representing a complex network monitoring system" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGmGEIVFTr5hgrJVUQxRu-ykYz2zjWIlv8Jl314rF6lGFFyi4bq-wpkXBkVYcEqKwUK-pc2r0wF1bqeCTvanRT_SHaRn1DbBtMrJezglGlZjdJfCkR-eOKnN86UIsj8dY0npQUdngJOigq4f9nAyOFNw9erIbh4SmBZc_IdKdjX26i6lBB-UGbNtt1BCSFGf1jiIE__WFHMSYDaVEHeHgdn6j6TO8Dx_j7jXILbuf66Mvd_H6KhAVEKz3vAkk-8RRzUnzPP1t9wBd6"/>
+<div class="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</div>
+<div class="flex justify-between items-end">
+<div>
+<span class="font-label text-[10px] text-primary-container">SYSTEMS_TOOL</span>
+<h3 class="font-headline text-xl font-bold group-hover:text-primary-container transition-colors">CoreFlow Engine</h3>
+</div>
+<span class="material-symbols-outlined text-primary">arrow_outward</span>
+</div>
+</div>
+<!-- Project Card -->
+<div class="group cursor-pointer">
+<div class="aspect-video bg-surface-container relative overflow-hidden mb-4">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 grayscale" data-alt="Close-up of high-end circuit board detailing with blueprint style overlay lines and technical annotations" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwx53XKPUiEHYIMwgIAuJIJR3psbou6QBhW8MDG7P-MwMbdj1n_0LoOwX2rornof-P2_IwmlL9fe2ggNKGzBGwU4M_LTQmdOF8-sDgCzkgsqckabWhDtHM1gLl1IqbP1ffBtyGk4cL79mytyCLlZ66Pp0508ZwWSlGy0TL5t72SPxGHE3aU5WFzknKHw5UqNuBft2Ora5RfP2fwDlaO3yqHWDNX8tAhcacyAKGqPJF8KSLjlzTA-DR5MwXfIlReUznWKfGkFSrvmSB"/>
+<div class="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</div>
+<div class="flex justify-between items-end">
+<div>
+<span class="font-label text-[10px] text-primary-container">OPEN_SOURCE</span>
+<h3 class="font-headline text-xl font-bold group-hover:text-primary-container transition-colors">Vellum_CSS_Library</h3>
+</div>
+<span class="material-symbols-outlined text-primary">arrow_outward</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Education Section -->
+<section class="mb-32" id="education">
+<div class="flex items-center gap-4 mb-8">
+<h2 class="font-headline text-2xl font-bold tracking-tight text-primary">04_Education</h2>
+<div class="h-px flex-grow bg-outline-variant/30"></div>
+</div>
+<div class="bg-surface-container-low p-8 border-t border-dashed border-outline-variant">
+<div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+<div>
+<h3 class="font-headline text-lg font-bold">B.S. Computer Science &amp; Engineering</h3>
+<p class="font-label text-sm text-on-surface-variant">Technological Institute of Madras</p>
+</div>
+<div class="font-label text-sm bg-surface-container-highest px-3 py-1">2016 — 2020</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-8 border-t border-dashed border-slate-300 bg-slate-100 flex flex-col md:flex-row justify-between items-center px-8 gap-4">
+<div class="flex items-center gap-2">
+<span class="font-['Space_Grotesk'] font-bold text-lg text-slate-900">ReLak</span>
+<span class="font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-slate-400">Built with ReLak © 2024</span>
+</div>
+<div class="flex gap-8">
+<a class="font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-opacity hover:opacity-80" href="#">Privacy</a>
+<a class="font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-opacity hover:opacity-80" href="#">Terms</a>
+<a class="font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-opacity hover:opacity-80" href="#">Support</a>
+</div>
+</footer>
+</body></html>

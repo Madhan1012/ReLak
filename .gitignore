@@ -2,3 +2,4 @@ temp_uploads/
 .env
 __pycache__/
 rel/
+.gitigmore

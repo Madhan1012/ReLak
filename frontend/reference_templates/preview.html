@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ReLak | Portfolio Preview</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "secondary-fixed": "#6bff8f",
+                        "surface-container-highest": "#e2e2e2",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#d3e4fe",
+                        "on-tertiary-container": "#8c9cb5",
+                        "on-secondary-fixed": "#002109",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#001b3c",
+                        "surface-bright": "#f9f9f9",
+                        "on-background": "#1a1c1c",
+                        "primary-container": "#003366",
+                        "tertiary-fixed-dim": "#b7c8e1",
+                        "on-primary-fixed-variant": "#1f477b",
+                        "on-surface-variant": "#43474f",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f3f3f3",
+                        "surface-container-high": "#e8e8e8",
+                        "surface-container": "#eeeeee",
+                        "primary": "#001e40",
+                        "inverse-surface": "#2f3131",
+                        "surface-tint": "#3a5f94",
+                        "surface-variant": "#e2e2e2",
+                        "tertiary-container": "#243448",
+                        "inverse-on-surface": "#f1f1f1",
+                        "primary-fixed": "#d5e3ff",
+                        "secondary": "#006e2f",
+                        "on-secondary": "#ffffff",
+                        "on-primary-container": "#799dd6",
+                        "error-container": "#ffdad6",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed-dim": "#4ae176",
+                        "on-surface": "#1a1c1c",
+                        "on-tertiary-fixed": "#0b1c30",
+                        "tertiary": "#0e1f32",
+                        "background": "#f9f9f9",
+                        "on-secondary-container": "#007432",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "surface": "#f9f9f9",
+                        "inverse-primary": "#a7c8ff",
+                        "surface-dim": "#dadada",
+                        "on-tertiary-fixed-variant": "#38485d",
+                        "outline": "#737780",
+                        "on-secondary-fixed-variant": "#005321",
+                        "outline-variant": "#c3c6d1",
+                        "secondary-container": "#6bff8f",
+                        "primary-fixed-dim": "#a7c8ff"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["JetBrains Mono"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .drafting-grid {
+            background-image: radial-gradient(circle, #c3c6d1 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary-fixed selection:text-primary">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-slate-50/70 backdrop-blur-xl border-b border-slate-200/50 shadow-sm flex justify-between items-center px-6 py-4 max-w-full mx-auto">
+<div class="font-['Space_Grotesk'] font-bold text-2xl tracking-tighter text-[#003366]">ReLak</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="font-['JetBrains_Mono'] text-sm tracking-tighter text-slate-500 hover:text-[#003366] transition-colors" href="#">Experience</a>
+<a class="font-['JetBrains_Mono'] text-sm tracking-tighter text-slate-500 hover:text-[#003366] transition-colors" href="#">Projects</a>
+<a class="font-['JetBrains_Mono'] text-sm tracking-tighter text-slate-500 hover:text-[#003366] transition-colors" href="#">Education</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined p-2 rounded-lg hover:bg-slate-100/50 transition-all duration-200 ease-in-out active:scale-95 text-[#003366]">settings</button>
+<button class="material-symbols-outlined p-2 rounded-lg hover:bg-slate-100/50 transition-all duration-200 ease-in-out active:scale-95 text-[#003366]">account_circle</button>
+</div>
+</nav>
+<main class="pt-20 min-h-screen flex flex-col md:flex-row drafting-grid">
+<!-- Left Side: Portfolio Preview -->
+<section class="flex-1 h-[calc(100vh-80px)] overflow-y-auto hide-scrollbar p-6 md:p-12">
+<div class="max-w-3xl mx-auto">
+<!-- Header Status -->
+<div class="flex items-center justify-between mb-8">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 bg-secondary rounded-full"></span>
+<span class="font-label text-[10px] uppercase tracking-widest text-secondary">AI Generated Preview</span>
+</div>
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-highest hover:bg-surface-variant transition-colors text-primary font-label text-xs border border-outline-variant/20 active:scale-95">
+<span class="material-symbols-outlined text-sm">edit</span>
+                        Edit Content
+                    </button>
+</div>
+<!-- Preview Canvas -->
+<div class="bg-surface-container-lowest shadow-2xl shadow-primary/5 min-h-[1200px] p-12 border border-outline-variant/10">
+<!-- Madhan Kumar Style Profile -->
+<header class="mb-16">
+<h1 class="font-headline text-5xl font-bold tracking-tighter text-primary mb-4">Madhan Kumar</h1>
+<p class="font-label text-sm text-outline tracking-tight uppercase mb-8">[ Full-Stack Architect / Data Engineer ]</p>
+<div class="w-24 h-1 bg-primary mb-12"></div>
+<p class="text-lg text-on-surface-variant leading-relaxed max-w-xl">
+                            Specializing in high-performance distributed systems and neural architecture. Crafting digital experiences with mathematical precision and structural integrity.
+                        </p>
+</header>
+<!-- Tech Stack Bento -->
+<section class="mb-16">
+<div class="flex items-center gap-4 mb-8">
+<h2 class="font-headline text-xl font-bold text-primary">Technical Engine</h2>
+<div class="flex-1 h-px bg-outline-variant/30"></div>
+<span class="font-label text-[10px] text-outline">v1.0.4</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- AI Assigned Icons Logic -->
+<div class="bg-surface-container p-6 border-l-2 border-primary">
+<span class="material-symbols-outlined text-primary mb-4" data-icon="psychology">psychology</span>
+<h3 class="font-headline font-bold text-sm mb-2">Neural Nets</h3>
+<p class="font-body text-xs text-on-surface-variant">Deep learning optimization and LLM integration.</p>
+</div>
+<div class="bg-surface-container p-6 border-l-2 border-primary">
+<span class="material-symbols-outlined text-primary mb-4" data-icon="database">database</span>
+<h3 class="font-headline font-bold text-sm mb-2">Data Warehousing</h3>
+<p class="font-body text-xs text-on-surface-variant">Scalable PostgreSQL and NoSQL architectures.</p>
+</div>
+<div class="bg-surface-container p-6 border-l-2 border-primary">
+<span class="material-symbols-outlined text-primary mb-4" data-icon="architecture">architecture</span>
+<h3 class="font-headline font-bold text-sm mb-2">System Design</h3>
+<p class="font-body text-xs text-on-surface-variant">Microservices patterns and edge computing.</p>
+</div>
+</div>
+</section>
+<!-- Featured Project -->
+<section>
+<div class="flex items-center gap-4 mb-8">
+<h2 class="font-headline text-xl font-bold text-primary">Selected Blueprint</h2>
+</div>
+<div class="group relative overflow-hidden bg-surface-container-low mb-12">
+<img alt="Project Preview" class="w-full h-80 object-cover grayscale hover:grayscale-0 transition-all duration-700" data-alt="Technical schematic interface with glowing blue lines and data visualization elements on a dark professional background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUVgjmO_MCWkuAndIu20PBvhBpvG6ASezUKPqnBhgsd4JhfhYx6dF_vilbeQtMRCQLVEzQnw_6G6_Ohmqx9sRlLu52KbkEiFbNCl4m0Em2WMTItlgzCUHcKrLEDzHXH1IPhYVGuCeXzdMTGfXHzMRWmgskqSg0h9fsLpUYTNQyHJYRBbv01bX0I3AZ5qMfOt-3TQr4DebyYNR_AINuHLvQl0eTtCLIbTEyZtUdfjc-AVxo5xKtB5GkniL5tRl0uQ4yspxQEaJ0iltO"/>
+<div class="p-8">
+<div class="flex justify-between items-start mb-4">
+<h3 class="font-headline text-2xl font-bold">Relational.ai</h3>
+<span class="font-label text-xs bg-primary text-on-primary px-3 py-1">2024</span>
+</div>
+<p class="text-on-surface-variant mb-6 italic">A comprehensive data extraction engine for legacy documentation.</p>
+<div class="flex gap-2">
+<span class="font-label text-[10px] border border-outline-variant px-2 py-1 uppercase">Rust</span>
+<span class="font-label text-[10px] border border-outline-variant px-2 py-1 uppercase">WASM</span>
+<span class="font-label text-[10px] border border-outline-variant px-2 py-1 uppercase">Docker</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</section>
+<!-- Right Side: Paywall -->
+<aside class="w-full md:w-[400px] bg-primary p-8 md:p-12 flex flex-col justify-center sticky top-20 h-screen md:h-[calc(100vh-80px)]">
+<div class="space-y-8">
+<div>
+<span class="font-label text-[10px] text-on-primary-container tracking-[0.3em] uppercase">Deployment Phase</span>
+<h2 class="font-headline text-4xl font-bold text-white mt-4 tracking-tighter">Claim Your Identity.</h2>
+</div>
+<div class="space-y-6">
+<div class="bg-primary-container/30 p-6 border border-on-primary-container/20">
+<p class="font-body text-on-primary-container text-sm leading-relaxed mb-4">
+                            Your portfolio is engineered and ready for launch. Our AI has extracted 12 skills and assigned 4 custom technical icons.
+                        </p>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary-fixed text-sm">auto_awesome</span>
+<span class="font-label text-[11px] text-secondary-fixed">Showcasing your tech stack with AI-assigned icons.</span>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-label text-[10px] text-on-primary-container uppercase">Personal URL</label>
+<div class="flex items-center bg-white/5 border-b border-on-primary-container/40 px-3 py-3">
+<span class="font-label text-sm text-on-primary-container">relak.me/</span>
+<input class="bg-transparent border-none text-white font-label text-sm focus:ring-0 p-0 w-full" readonly="" type="text" value="madhan-kumar"/>
+</div>
+</div>
+<button class="w-full py-4 bg-gradient-to-br from-primary to-primary-container text-white font-headline font-bold text-lg border border-on-primary-container/30 hover:shadow-[0_0_20px_rgba(107,255,143,0.15)] transition-all active:scale-[0.98] flex items-center justify-center gap-4">
+                        Claim My URL
+                        <span class="font-label text-sm font-normal text-secondary-fixed">₹20</span>
+</button>
+<p class="text-center font-label text-[10px] text-on-primary-container/60 uppercase tracking-widest">One-time payment • Lifetime hosting</p>
+</div>
+<div class="pt-12 border-t border-white/10">
+<div class="flex justify-between items-center opacity-40 grayscale">
+<img alt="Stripe" data-alt="Stripe payment provider logo minimalist" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiguJ_VxZpW77k5EEbEixjZ63uQt17Txhxk-rxa6y1IxRN1t0JJaszofy5JJhNwSa5UDXwnxnjTZhjYJ2J1Py8dF5HL2U-APK-zqVCwhu5aIqbGkwDRsT8icQ3XHTu0dTMDuiqjddcvJGWM80LywrOp5EgcB2rEnUZr05CKJ8vdmuvVoR3H-tD8j6EpxJ25C7nHx2_ZXDe5Yx5fU-8wUGHaooSlgJktoUOfJVP3Vn2h4dTnA3qmmUHU61vlDDCALSN_JC1KFeLylEl"/>
+<img alt="Razorpay" data-alt="Razorpay payment provider logo minimalist" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZOH3SHmqp3n8CT7-SCJBZ9e6aeE1rdEDrHxoWH6xKAtd-mr0J5muXqWfCu9zRPLTQVM1_FqLQEMFtQeM03GHT-bwbMShTj9Hi6N6-GTKR_gy27vWjnbNVcL7_ySEaN0CYwUEYZznBsPHLXj5mAuE1nUU1D7Mpd49g0jRJYb5OsHL-Lm7xw-yuw3tzgzKNTjA3ncsdAamC-iTfVWAoox0xeHax0v9xtOH2SJKYKs2eJ107ChuO72GnJJzQHJsn6JZ8qzvhM4lparKY"/>
+<img alt="Secure" data-alt="SSL secure badge icon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWpqFJozH05RlVunTbkEn8LGnXJioc9hjSHvyBwau71h_GBtxIJUcn2nTrxGEAzjrMwu9nm40KoIZ85sJhFTzGtVMPECMKDF_uT1nUBsJrpFZxRCizwuJnkKBBdoqp0XnfteTP9x6_rhyx-JTA7f-YpKN94IdlnVb2cGHWqAWru0zAMz8au9CG75R78b1JzcoXEGlQTn57TuDoAoK1pEcgqmxkrNiBKX827kDEPaAMZTvFdWxyBBlkNBH5w1jefhtdalI7DTsGYHjD"/>
+</div>
+</div>
+</div>
+</aside>
+</main>
+<!-- Footer -->
+<footer class="w-full py-8 border-t border-dashed border-slate-300 bg-slate-100 flex flex-col md:flex-row justify-between items-center px-8 gap-4">
+<div class="font-['Space_Grotesk'] font-bold text-lg text-slate-900">ReLak</div>
+<div class="font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-slate-400">Built with ReLak © 2024</div>
+<div class="flex gap-6">
+<a class="font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-opacity hover:opacity-80" href="#">Privacy</a>
+<a class="font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-opacity hover:opacity-80" href="#">Terms</a>
+<a class="font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-opacity hover:opacity-80" href="#">Support</a>
+</div>
+</footer>
+</body></html>
