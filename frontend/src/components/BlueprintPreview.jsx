@@ -1,5 +1,67 @@
-import { Mail } from 'lucide-react';
+import { Mail, Phone, MapPin, Plus, Trash2 } from 'lucide-react';
 import LucideIcon from './LucideIcon';
+
+/** Visible [LINK] badge — prints in PDF. Editable input in edit mode. */
+function LinkBadge({ href, onEdit, editable }) {
+  if (!href && !editable) return null;
+  const short = (href || '').replace('https://', '').replace('http://', '').replace('www.', '');
+  if (editable) {
+    return (
+      <input
+        defaultValue={href || ''}
+        onBlur={e => onEdit && onEdit(e.target.value || null)}
+        placeholder="https://github.com/..."
+        style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--blue)', background: 'var(--bg-low)', border: '1px solid var(--border-solid)', padding: '1px 6px', borderRadius: 2, width: 220, outline: 'none' }}
+      />
+    );
+  }
+  if (!href) return null;
+  return (
+    <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--blue)', background: 'var(--bg-low)', padding: '1px 7px', border: '1px solid var(--border-solid)', borderRadius: 2, wordBreak: 'break-all' }}>
+      [LINK] {short}
+    </span>
+  );
+}
+
+/** Inline contentEditable span/block. Falls back to plain render when not editable. */
+function E({ value, onChange, editable, style, tag: Tag = 'span', placeholder = '…' }) {
+  if (!editable) return <Tag style={style}>{value}</Tag>;
+  return (
+    <Tag
+      contentEditable suppressContentEditableWarning
+      onBlur={e => onChange && onChange(e.currentTarget.textContent)}
+      style={{ ...style, outline: 'none', borderBottom: '1px dashed var(--border-solid)', minWidth: 40, cursor: 'text' }}
+      title="Click to edit"
+    >
+      {value || placeholder}
+    </Tag>
+  );
+}
+
+/** Editable comma-separated chip list */
+function EditableChips({ items, onChange, editable }) {
+  if (!editable) {
+    return (
+      <div className="skills-wrap">
+        {items.map((s, i) => <span key={i} className="skill-chip">{s}</span>)}
+      </div>
+    );
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {items.map((s, i) => (
+        <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <input value={s} onChange={e => { const n = [...items]; n[i] = e.target.value; onChange(n); }}
+            style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, padding: '3px 8px', border: '1px solid var(--border-solid)', background: 'var(--bg-low)', color: 'var(--text)', borderRadius: 2, flex: 1, outline: 'none', textTransform: 'uppercase', letterSpacing: '0.05em' }} />
+          <button onClick={() => onChange(items.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)', padding: 2 }}><Trash2 size={12} /></button>
+        </div>
+      ))}
+      <button onClick={() => onChange([...items, ''])} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: '1px dashed var(--border-solid)', padding: '4px 10px', cursor: 'pointer', fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--blue)', borderRadius: 2, width: 'fit-content' }}>
+        <Plus size={11} /> Add
+      </button>
+    </div>
+  );
+}
 
 function SectionHeader({ index, title }) {
   return (
@@ -11,124 +73,222 @@ function SectionHeader({ index, title }) {
   );
 }
 
-function SkillChip({ label }) {
-  return <span className="skill-chip">{label}</span>;
-}
-
-export default function BlueprintPreview({ data }) {
+export default function BlueprintPreview({ data, editable = false, onDataChange }) {
   if (!data) return null;
+
+  const techSkills = data.technical_skills ?? data.skills ?? [];
+  const softSkills = data.soft_skills ?? [];
+
+  /** Deep-patch helper: 'experience.0.role' → sets that nested value */
+  const patch = (path, value) => {
+    if (!onDataChange) return;
+    const parts = path.split('.');
+    const next = JSON.parse(JSON.stringify(data));
+    let cur = next;
+    for (let i = 0; i < parts.length - 1; i++) {
+      cur = cur[parts[i]];
+    }
+    cur[parts[parts.length - 1]] = value;
+    onDataChange(next);
+  };
+
+  const addExp  = () => onDataChange && onDataChange({ ...data, experience: [...(data.experience || []), { company: '', role: '', duration: '', highlights: [''] }] });
+  const addProj = () => onDataChange && onDataChange({ ...data, projects: [...(data.projects || []), { title: '', description: '', technologies: [], link: null }] });
+  const addEdu  = () => onDataChange && onDataChange({ ...data, education: [...(data.education || []), { institution: '', degree: '', year: '' }] });
+  const removeExp  = i => onDataChange && onDataChange({ ...data, experience: data.experience.filter((_, j) => j !== i) });
+  const removeProj = i => onDataChange && onDataChange({ ...data, projects: data.projects.filter((_, j) => j !== i) });
+  const removeEdu  = i => onDataChange && onDataChange({ ...data, education: data.education.filter((_, j) => j !== i) });
+
+  let idx = 2;
 
   return (
     <div id="blueprint-preview" className="bp-card">
 
       {/* ── Identity ── */}
-      <header style={{ marginBottom: 48 }}>
+      <header style={{ marginBottom: 40 }}>
         <span className="identity-tag">[ 01_IDENTITY ]</span>
-        <h1 className="identity-name">{data.name}</h1>
+        <E tag="h1" value={data.name} editable={editable} onChange={v => patch('name', v)}
+          style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 52, fontWeight: 700, color: 'var(--blue-dark)', letterSpacing: '-1.5px', lineHeight: 1, display: 'block' }} />
         <div className="identity-rule" />
-        <p className="identity-summary">{data.summary}</p>
-        <div className="identity-email">
-          <Mail size={13} color="#737780" />
-          <span>{data.email}</span>
+        <E tag="p" value={data.summary} editable={editable} onChange={v => patch('summary', v)}
+          style={{ fontFamily: "'Inter',sans-serif", fontSize: 15, color: 'var(--text-muted)', maxWidth: 560, lineHeight: 1.7, marginBottom: 16, display: 'block' }} />
+
+        {/* Contact row */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 8 }}>
+          <div className="identity-email">
+            <Mail size={13} color="var(--text-dim)" />
+            <E value={data.email} editable={editable} onChange={v => patch('email', v)} style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: 'var(--text-dim)' }} />
+          </div>
+          {(data.phone || editable) && (
+            <div className="identity-email">
+              <Phone size={13} color="var(--text-dim)" />
+              <E value={data.phone || ''} editable={editable} onChange={v => patch('phone', v || null)} placeholder="+91 ..." style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: 'var(--text-dim)' }} />
+            </div>
+          )}
+          {(data.address || editable) && (
+            <div className="identity-email">
+              <MapPin size={13} color="var(--text-dim)" />
+              <E value={data.address || ''} editable={editable} onChange={v => patch('address', v || null)} placeholder="City, Country" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: 'var(--text-dim)' }} />
+            </div>
+          )}
+          {(data.linkedin || editable) && (
+            <div className="identity-email">
+              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--text-dim)' }}>in</span>
+              <LinkBadge href={data.linkedin} editable={editable} onEdit={v => patch('linkedin', v)} />
+            </div>
+          )}
+          {(data.github || editable) && (
+            <div className="identity-email">
+              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--text-dim)' }}>gh</span>
+              <LinkBadge href={data.github} editable={editable} onEdit={v => patch('github', v)} />
+            </div>
+          )}
         </div>
       </header>
 
-      {/* ── Tech Stack Icons ── */}
+      {/* ── Tech Stack icons ── */}
       {data.tech_stack_icons?.length > 0 && (
-        <section style={{ marginBottom: 48 }}>
-          <SectionHeader index={2} title="Technical_Engine" />
-          <div className="tech-grid">
+        <section style={{ marginBottom: 40 }}>
+          <SectionHeader index={idx++} title="Technical_Engine" />
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
             {data.tech_stack_icons.map((icon, i) => (
-              <div key={i} className="tech-cell">
-                <LucideIcon name={icon} size={18} color="#003366" />
-                <span className="tech-cell-label">{icon.replace(/-/g, ' ')}</span>
+              <div key={i} style={{ background: 'var(--bg-mid)', padding: '10px 14px', borderLeft: '2px solid var(--blue-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <LucideIcon name={icon} size={20} color="var(--blue)" />
               </div>
             ))}
           </div>
         </section>
       )}
 
-      {/* ── Skills ── */}
-      {data.skills?.length > 0 && (
-        <section style={{ marginBottom: 48 }}>
-          <SectionHeader index={3} title="Skills_Matrix" />
-          <div className="skills-wrap">
-            {data.skills.map((s, i) => <SkillChip key={i} label={s} />)}
-          </div>
+      {/* ── Technical Skills ── */}
+      {(techSkills.length > 0 || editable) && (
+        <section style={{ marginBottom: 40 }}>
+          <SectionHeader index={idx++} title="Technical_Skills" />
+          <EditableChips items={techSkills} editable={editable}
+            onChange={v => patch(data.technical_skills !== undefined ? 'technical_skills' : 'skills', v)} />
+        </section>
+      )}
+
+      {/* ── Soft Skills ── */}
+      {(softSkills.length > 0 || editable) && (
+        <section style={{ marginBottom: 40 }}>
+          <SectionHeader index={idx++} title="Soft_Skills" />
+          <EditableChips items={softSkills} editable={editable} onChange={v => patch('soft_skills', v)} />
         </section>
       )}
 
       {/* ── Experience ── */}
-      {data.experience?.length > 0 && (
-        <section id="experience" style={{ marginBottom: 48 }}>
-          <SectionHeader index={4} title="Experience_Log" />
+      {((data.experience?.filter(e => e.role || e.company).length > 0) || editable) && (
+        <section id="experience" style={{ marginBottom: 40 }}>
+          <SectionHeader index={idx++} title="Experience_Log" />
           <div className="exp-list">
-            {data.experience.map((exp, i) => (
-              <div key={i} className="exp-row">
+            {(data.experience || []).map((exp, i) => (
+              <div key={i} className="exp-row" style={{ position: 'relative' }}>
+                {editable && (
+                  <button onClick={() => removeExp(i)} style={{ position: 'absolute', top: 0, right: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)', zIndex: 1 }}><Trash2 size={13} /></button>
+                )}
                 <div className="exp-meta">
-                  <span className="exp-duration">{exp.duration}</span>
-                  <div className="exp-active">
-                    <span className="exp-active-dot" />
-                    <span className="exp-active-label">Active</span>
-                  </div>
+                  <E value={exp.duration} editable={editable} onChange={v => patch(`experience.${i}.duration`, v)}
+                    style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: 'var(--text-dim)', display: 'block', marginBottom: 6 }} />
+                  <div className="exp-active"><span className="exp-active-dot" /><span className="exp-active-label">Active</span></div>
                 </div>
                 <div className={`exp-card ${i === 0 ? 'primary' : 'secondary'}`}>
                   <div className="exp-card-top">
                     <div>
-                      <div className="exp-role">{exp.role}</div>
-                      <div className="exp-company">{exp.company}</div>
+                      <E value={exp.role} editable={editable} onChange={v => patch(`experience.${i}.role`, v)}
+                        style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 17, fontWeight: 700, color: 'var(--blue-dark)', marginBottom: 4, display: 'block' }} />
+                      <E value={exp.company} editable={editable} onChange={v => patch(`experience.${i}.company`, v)}
+                        style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: 'var(--blue)', display: 'block' }} />
                     </div>
                     <span className="exp-ref">[ REF: EX-{String(i + 1).padStart(3, '0')} ]</span>
                   </div>
                   <ul className="exp-highlights">
-                    {exp.highlights.map((h, j) => (
+                    {(exp.highlights || []).map((h, j) => (
                       <li key={j} className="exp-highlight">
                         <span className="exp-arrow">→</span>
-                        <span className="exp-highlight-text">{h}</span>
+                        <E value={h} editable={editable} onChange={v => {
+                          const hl = [...exp.highlights]; hl[j] = v; patch(`experience.${i}.highlights`, hl);
+                        }} style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }} />
+                        {editable && (
+                          <button onClick={() => patch(`experience.${i}.highlights`, exp.highlights.filter((_, k) => k !== j))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)', padding: '0 4px', flexShrink: 0 }}><Trash2 size={11} /></button>
+                        )}
                       </li>
                     ))}
                   </ul>
+                  {editable && (
+                    <button onClick={() => patch(`experience.${i}.highlights`, [...(exp.highlights || []), ''])} style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 8, background: 'none', border: '1px dashed var(--border-solid)', padding: '3px 10px', cursor: 'pointer', fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--blue)', borderRadius: 2 }}>
+                      <Plus size={11} /> Add bullet
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
           </div>
+          {editable && (
+            <button onClick={addExp} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, background: 'none', border: '1px dashed var(--blue)', padding: '8px 16px', cursor: 'pointer', fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--blue)', borderRadius: 2 }}>
+              <Plus size={13} /> Add Experience
+            </button>
+          )}
         </section>
       )}
 
       {/* ── Projects ── */}
-      {data.projects?.length > 0 && (
-        <section id="projects" style={{ marginBottom: 48 }}>
-          <SectionHeader index={5} title="Project_Schematics" />
+      {((data.projects?.filter(p => p.title).length > 0) || editable) && (
+        <section id="projects" style={{ marginBottom: 40 }}>
+          <SectionHeader index={idx++} title="Project_Schematics" />
           <div className="proj-grid">
-            {data.projects.map((proj, i) => (
-              <div key={i} className="proj-card">
-                <span className="proj-id">PROJ_{String(i + 1).padStart(3, '0')}</span>
-                <div className="proj-title">{proj.title}</div>
-                <p className="proj-desc">{proj.description}</p>
-                <div className="proj-chips">
-                  {proj.technologies.map((t, j) => <SkillChip key={j} label={t} />)}
+            {(data.projects || []).map((proj, i) => (
+              <div key={i} className="proj-card" style={{ position: 'relative' }}>
+                {editable && (
+                  <button onClick={() => removeProj(i)} style={{ position: 'absolute', top: 8, right: 8, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)' }}><Trash2 size={13} /></button>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+                  <span className="proj-id">PROJ_{String(i + 1).padStart(3, '0')}</span>
+                  <LinkBadge href={proj.link} editable={editable} onEdit={v => patch(`projects.${i}.link`, v)} />
                 </div>
+                <E value={proj.title} editable={editable} onChange={v => patch(`projects.${i}.title`, v)}
+                  style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--blue-dark)', marginBottom: 10, display: 'block' }} />
+                <E tag="p" value={proj.description} editable={editable} onChange={v => patch(`projects.${i}.description`, v)}
+                  style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 16 }} />
+                <EditableChips items={proj.technologies || []} editable={editable}
+                  onChange={v => patch(`projects.${i}.technologies`, v)} />
               </div>
             ))}
           </div>
+          {editable && (
+            <button onClick={addProj} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, background: 'none', border: '1px dashed var(--blue)', padding: '8px 16px', cursor: 'pointer', fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--blue)', borderRadius: 2 }}>
+              <Plus size={13} /> Add Project
+            </button>
+          )}
         </section>
       )}
 
       {/* ── Education ── */}
-      {data.education?.length > 0 && (
+      {((data.education?.filter(e => e.degree || e.institution).length > 0) || editable) && (
         <section id="education">
-          <SectionHeader index={6} title="Education" />
+          <SectionHeader index={idx++} title="Education" />
           <div className="edu-list">
-            {data.education.map((edu, i) => (
-              <div key={i} className="edu-row">
+            {(data.education || []).map((edu, i) => (
+              <div key={i} className="edu-row" style={{ position: 'relative' }}>
+                {editable && (
+                  <button onClick={() => removeEdu(i)} style={{ position: 'absolute', top: 8, right: 8, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)' }}><Trash2 size={13} /></button>
+                )}
                 <div>
-                  <div className="edu-degree">{edu.degree}</div>
-                  <div className="edu-institution">{edu.institution}</div>
+                  <E value={edu.degree} editable={editable} onChange={v => patch(`education.${i}.degree`, v)}
+                    style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--blue-dark)', marginBottom: 4, display: 'block' }} />
+                  <E value={edu.institution} editable={editable} onChange={v => patch(`education.${i}.institution`, v)}
+                    style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: 'var(--text-muted)', display: 'block' }} />
                 </div>
-                <span className="edu-year">{edu.year}</span>
+                <E value={edu.year} editable={editable} onChange={v => patch(`education.${i}.year`, v)}
+                  style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, background: 'var(--bg-highest)', padding: '4px 12px', color: 'var(--text-muted)' }} />
               </div>
             ))}
           </div>
+          {editable && (
+            <button onClick={addEdu} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, background: 'none', border: '1px dashed var(--blue)', padding: '8px 16px', cursor: 'pointer', fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--blue)', borderRadius: 2 }}>
+              <Plus size={13} /> Add Education
+            </button>
+          )}
         </section>
       )}
 

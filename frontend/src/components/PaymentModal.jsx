@@ -120,21 +120,32 @@ export default function PaymentModal({ onClose, onSuccess, resumeName }) {
             {/* Demo notice */}
             <div style={{
               background: '#fff8e1', border: '1px solid #f0c040',
-              padding: '8px 12px', marginBottom: 20,
+              padding: '8px 12px', marginBottom: 12,
               display: 'flex', alignItems: 'center', gap: 8,
             }}>
               <span style={{ fontSize: 14 }}>⚠️</span>
-              <span style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 10, color: '#7a5c00',
-              }}>DEMO MODE — No real money will be charged</span>
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: '#7a5c00' }}>
+                DEMO MODE — No real money will be charged
+              </span>
+            </div>
+
+            {/* Regeneration cost warning */}
+            <div style={{
+              background: '#f3f3f3', border: '1px solid #c3c6d1',
+              padding: '10px 14px', marginBottom: 20,
+              display: 'flex', alignItems: 'flex-start', gap: 8,
+            }}>
+              <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>ℹ️</span>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: '#43474f', lineHeight: 1.55 }}>
+                This payment is for the <strong>single generation of this PDF</strong> (all 3 styles included).
+                Re-generating with a new or updated resume will cost another <strong>₹20</strong>.
+              </span>
             </div>
 
             {/* Pay button */}
             <button onClick={handlePay} style={{
               width: '100%', padding: '14px',
-              background: 'linear-gradient(135deg, #001e40 0%, #003366 100%)',
-              color: '#ffffff',
+              background: '#003366', color: '#c9a84c',
               fontFamily: "'JetBrains Mono', monospace",
               fontSize: 13, fontWeight: 600,
               border: 'none', cursor: 'pointer',

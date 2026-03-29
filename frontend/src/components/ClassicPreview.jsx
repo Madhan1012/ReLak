@@ -59,6 +59,8 @@ export default function ClassicPreview({ data }) {
   if (!data) return null;
 
   const hasPhoto = !!data.photo_url;
+  const techSkills = data.technical_skills ?? data.skills ?? [];
+  const softSkills = data.soft_skills ?? [];
 
   return (
     <div
@@ -118,41 +120,36 @@ export default function ClassicPreview({ data }) {
           {/* Contact details */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <ContactLine icon="✉" value={data.email} />
-            {data.phone  && <ContactLine icon="☎" value={data.phone} />}
+            {data.phone   && <ContactLine icon="☎" value={data.phone} />}
             {data.address && <ContactLine icon="⌖" value={data.address} />}
+            {data.linkedin && <ContactLine icon="in" value={data.linkedin.replace('https://','').replace('www.','')} />}
+            {data.github   && <ContactLine icon="gh" value={data.github.replace('https://','').replace('www.','')} />}
           </div>
         </div>
 
-        {/* Skills */}
-        {data.skills?.length > 0 && (
-          <SidebarSection title="Skills">
+        {/* Technical Skills */}
+        {techSkills.length > 0 && (
+          <SidebarSection title="Technical Skills">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {data.skills.map((sk, i) => (
+              {techSkills.map((sk, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
                   <span style={{ color: GOLD, fontSize: 8, marginTop: 3, flexShrink: 0 }}>◆</span>
-                  <span style={{
-                    fontFamily: "'Georgia', serif",
-                    fontSize: 11, color: LIGHT, lineHeight: 1.4,
-                  }}>{sk}</span>
+                  <span style={{ fontFamily: "'Georgia', serif", fontSize: 11, color: LIGHT, lineHeight: 1.4 }}>{sk}</span>
                 </div>
               ))}
             </div>
           </SidebarSection>
         )}
 
-        {/* Technologies */}
-        {data.tech_stack_icons?.length > 0 && (
-          <SidebarSection title="Technologies">
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 6px' }}>
-              {data.tech_stack_icons.map((t, i) => (
-                <span key={i} style={{
-                  fontFamily: "'Courier New', monospace",
-                  fontSize: 9, color: DIM,
-                  background: 'rgba(255,255,255,0.07)',
-                  padding: '2px 6px',
-                  textTransform: 'capitalize',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                }}>{t.replace(/-/g, ' ')}</span>
+        {/* Soft Skills */}
+        {softSkills.length > 0 && (
+          <SidebarSection title="Soft Skills">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {softSkills.map((sk, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
+                  <span style={{ color: GOLD, fontSize: 8, marginTop: 3, flexShrink: 0 }}>◇</span>
+                  <span style={{ fontFamily: "'Georgia', serif", fontSize: 11, color: LIGHT, lineHeight: 1.4 }}>{sk}</span>
+                </div>
               ))}
             </div>
           </SidebarSection>
@@ -223,11 +220,14 @@ export default function ClassicPreview({ data }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {data.projects.map((proj, i) => (
                 <div key={i}>
-                  <div style={{
-                    fontFamily: "'Georgia', serif",
-                    fontSize: 12, fontWeight: 700,
-                    color: NAVY, marginBottom: 2,
-                  }}>{proj.title}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 2 }}>
+                    <div style={{ fontFamily: "'Georgia', serif", fontSize: 12, fontWeight: 700, color: NAVY }}>{proj.title}</div>
+                    {proj.link && (
+                      <span style={{ fontFamily: "'Courier New', monospace", fontSize: 8, color: GOLD }}>
+                        {proj.link.replace('https://github.com/','gh/')}
+                      </span>
+                    )}
+                  </div>
                   <p style={{
                     fontFamily: "'Georgia', serif",
                     fontSize: 11, color: MUTED,

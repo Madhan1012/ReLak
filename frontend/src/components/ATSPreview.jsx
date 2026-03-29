@@ -2,54 +2,62 @@
 export default function ATSPreview({ data }) {
   if (!data) return null;
 
+  const techSkills = data.technical_skills ?? data.skills ?? [];
+  const softSkills = data.soft_skills ?? [];
+
   const s = {
-    wrap: {
-      background: '#ffffff', padding: '40px 48px',
-      fontFamily: "'Inter', sans-serif", color: '#111111',
-      maxWidth: 800, margin: '0 auto',
-    },
-    name: {
-      fontSize: 28, fontWeight: 700, color: '#000000',
-      letterSpacing: '-0.5px', marginBottom: 4,
-    },
-    contact: { fontSize: 12, color: '#444444', marginBottom: 20 },
+    wrap: { background: '#ffffff', padding: '40px 48px', fontFamily: "'Inter', sans-serif", color: '#111111', maxWidth: 800, margin: '0 auto' },
+    name: { fontSize: 28, fontWeight: 700, color: '#000000', letterSpacing: '-0.5px', marginBottom: 4 },
+    contact: { fontSize: 12, color: '#444444', marginBottom: 4 },
     rule: { borderTop: '2px solid #000000', margin: '16px 0' },
     thinRule: { borderTop: '1px solid #cccccc', margin: '12px 0' },
-    sectionTitle: {
-      fontSize: 13, fontWeight: 700, textTransform: 'uppercase',
-      letterSpacing: '0.08em', color: '#000000',
-      marginBottom: 10,
-    },
+    sectionTitle: { fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#000000', marginBottom: 10 },
     summary: { fontSize: 13, lineHeight: 1.65, color: '#333333', marginBottom: 20 },
     role: { fontSize: 14, fontWeight: 700, color: '#000000' },
     company: { fontSize: 13, color: '#333333' },
     duration: { fontSize: 12, color: '#666666' },
-    bullet: { fontSize: 13, color: '#333333', lineHeight: 1.6, marginLeft: 16 },
-    chip: {
-      display: 'inline-block', fontSize: 11,
-      border: '1px solid #cccccc', padding: '2px 8px',
-      marginRight: 6, marginBottom: 6, color: '#333333',
-    },
+    bullet: { fontSize: 13, color: '#333333', lineHeight: 1.6 },
+    chip: { display: 'inline-block', fontSize: 11, border: '1px solid #cccccc', padding: '2px 8px', marginRight: 6, marginBottom: 6, color: '#333333' },
     projTitle: { fontSize: 13, fontWeight: 700, color: '#000000' },
     projDesc: { fontSize: 12, color: '#444444', lineHeight: 1.6 },
+    link: { fontSize: 11, color: '#003366', textDecoration: 'none' },
   };
 
   return (
     <div id="blueprint-preview" style={s.wrap}>
       {/* Header */}
       <div style={s.name}>{data.name}</div>
-      <div style={s.contact}>{data.email}</div>
+      <div style={s.contact}>
+        {data.email}
+        {data.phone ? ` · ${data.phone}` : ''}
+        {data.address ? ` · ${data.address}` : ''}
+      </div>
+      {(data.linkedin || data.github) && (
+        <div style={{ ...s.contact, marginBottom: 0 }}>
+          {data.linkedin && <span>{data.linkedin.replace('https://','').replace('www.','')}</span>}
+          {data.linkedin && data.github && <span> · </span>}
+          {data.github && <span>{data.github.replace('https://','').replace('www.','')}</span>}
+        </div>
+      )}
       <div style={s.rule} />
 
       {/* Summary */}
       <div style={s.sectionTitle}>Professional Summary</div>
       <p style={s.summary}>{data.summary}</p>
 
-      {/* Skills */}
-      {data.skills?.length > 0 && (
+      {/* Technical Skills */}
+      {techSkills.length > 0 && (
         <div style={{ marginBottom: 20 }}>
-          <div style={s.sectionTitle}>Skills</div>
-          <div>{data.skills.map((sk, i) => <span key={i} style={s.chip}>{sk}</span>)}</div>
+          <div style={s.sectionTitle}>Technical Skills</div>
+          <div>{techSkills.map((sk, i) => <span key={i} style={s.chip}>{sk}</span>)}</div>
+        </div>
+      )}
+
+      {/* Soft Skills */}
+      {softSkills.length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <div style={s.sectionTitle}>Soft Skills</div>
+          <div>{softSkills.map((sk, i) => <span key={i} style={s.chip}>{sk}</span>)}</div>
         </div>
       )}
 
@@ -65,9 +73,7 @@ export default function ATSPreview({ data }) {
               </div>
               <div style={s.company}>{exp.company}</div>
               <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
-                {exp.highlights.map((h, j) => (
-                  <li key={j} style={s.bullet}>{h}</li>
-                ))}
+                {exp.highlights.map((h, j) => <li key={j} style={s.bullet}>{h}</li>)}
               </ul>
               {i < data.experience.length - 1 && <div style={s.thinRule} />}
             </div>
@@ -81,8 +87,15 @@ export default function ATSPreview({ data }) {
           <div style={s.sectionTitle}>Projects</div>
           {data.projects.map((proj, i) => (
             <div key={i} style={{ marginBottom: 12 }}>
-              <div style={s.projTitle}>{proj.title}</div>
-              <p style={s.projDesc}>{proj.description}</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <span style={s.projTitle}>{proj.title}</span>
+                {proj.link && (
+                  <span style={{ ...s.link, fontSize: 10 }}>
+                    {proj.link.replace('https://','').replace('www.','')}
+                  </span>
+                )}
+              </div>
+              <p style={{ ...s.projDesc, margin: '4px 0' }}>{proj.description}</p>
               <div>{proj.technologies.map((t, j) => <span key={j} style={s.chip}>{t}</span>)}</div>
               {i < data.projects.length - 1 && <div style={s.thinRule} />}
             </div>
