@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, JSON, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, String, JSON, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base
 import uuid
@@ -16,7 +16,14 @@ class Portfolio(Base):
     __tablename__ = "portfolios"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
-    slug = Column(String, unique=True, nullable=False) # e.g., 'madhan-kumar'
-    resume_data = Column(JSON, nullable=False)        # Stores the JSON 
+    slug = Column(String, unique=True, nullable=False)
+    resume_data = Column(JSON, nullable=False)
     is_paid = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+class SiteContent(Base):
+    __tablename__ = "site_content"
+    key = Column(String, primary_key=True)   # 'privacy' | 'support' | 'about'
+    title = Column(String, nullable=False)
+    body = Column(Text, nullable=False)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow)

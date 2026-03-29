@@ -6,7 +6,7 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Header, Request, Response
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Header, Request, Response, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -16,8 +16,8 @@ from sqlalchemy.orm import Session
 
 from .database import engine, get_db
 from .engine import parse_resume_to_json
-from .schemas import ResumeRepsonse
-from .models import Base, Portfolio, User
+from .schemas import ResumeResponse, ResumeRepsonse
+from .models import Base, Portfolio, User, SiteContent
 from .security import sanitise_pdf, mask_pii, CSP_POLICY
 
 # ── Logging ───────────────────────────────────────────────────────────────────
@@ -117,7 +117,7 @@ async def health_check():
     return {"status": "online", "message": "Engine is warmed-up"}
 
 
-@app.post("/upload", response_model=ResumeRepsonse)
+@app.post("/upload", response_model=ResumeResponse)
 @limiter.limit("5/minute")
 async def upload_resume(request: Request, file: UploadFile = File(...), db: Session = Depends(get_db)):
     # ── Size check ────────────────────────────────────────────────────────────
@@ -193,7 +193,7 @@ async def upload_resume(request: Request, file: UploadFile = File(...), db: Sess
         raise
     except Exception as e:
         log.error(f"Upload error: {e}", exc_info=True)
-        return ResumeRepsonse(success=False, error="Processing failed. Please try again.")
+        return ResumeResponse(success=False, error="Processing failed. Please try again.")
     finally:
         if temp_path.exists():
             os.remove(temp_path)
@@ -301,6 +301,44 @@ def purge_all(db: Session = Depends(get_db)):
     db.commit()
     log.warning(f"PURGE executed: {p} portfolios, {u} users deleted")
     return {"message": "All data purged.", "portfolios_deleted": p, "users_deleted": u}
+
+
+# ── Public content routes ─────────────────────────────────────────────────────
+
+_CONTENT_DEFAULTS = {
+    "privacy": {"title": "Privacy & Terms", "body": ""},
+    "support": {"title": "Support", "body": ""},
+    "about":   {"title": "About ReLak", "body": ""},
+}
+
+@app.get("/content/{key}")
+def get_content(key: str, db: Session = Depends(get_db)):
+    if key not in _CONTENT_DEFAULTS:
+        raise HTTPException(status_code=404, detail="Content page not found")
+    row = db.query(SiteContent).filter(SiteContent.key == key).first()
+    if not row:
+        return _CONTENT_DEFAULTS[key]
+    return {"title": row.title, "body": row.body}
+
+
+@app.put("/content/{key}", dependencies=[Depends(verify_admin)])
+def set_content(key: str, payload: dict = Body(...), db: Session = Depends(get_db)):
+    if key not in _CONTENT_DEFAULTS:
+        raise HTTPException(status_code=404, detail="Content page not found")
+    title = str(payload.get("title", "")).strip()
+    body  = str(payload.get("body", "")).strip()
+    if not title:
+        raise HTTPException(status_code=422, detail="title is required")
+    row = db.query(SiteContent).filter(SiteContent.key == key).first()
+    if row:
+        row.title = title
+        row.body  = body
+        row.updated_at = datetime.datetime.utcnow()
+    else:
+        db.add(SiteContent(key=key, title=title, body=body))
+    db.commit()
+    log.info(f"Content updated: {key}")
+    return {"message": f"Content '{key}' saved."}
 
 
 if __name__ == "__main__":

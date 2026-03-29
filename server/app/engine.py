@@ -5,7 +5,7 @@ import pymupdf4llm
 import pymupdf
 from google import genai
 from dotenv import load_dotenv
-from .schemas import PortfolioData, ResumeRepsonse
+from .schemas import PortfolioData, ResumeResponse, ResumeRepsonse
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 
@@ -164,7 +164,7 @@ def _post_process_links(data: PortfolioData, links: list[str]) -> PortfolioData:
     return data
 
 
-def parse_resume_to_json(file_path: str) -> ResumeRepsonse:
+def parse_resume_to_json(file_path: str) -> ResumeResponse:
     try:
         client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
@@ -188,7 +188,7 @@ def parse_resume_to_json(file_path: str) -> ResumeRepsonse:
             # Vision fallback for image-only / scanned PDFs
             page_images = _pdf_to_page_images(file_path)
             if not page_images:
-                return ResumeRepsonse(
+                return ResumeResponse(
                     success=False,
                     error="Could not render PDF pages for vision extraction."
                 )
@@ -216,7 +216,7 @@ def parse_resume_to_json(file_path: str) -> ResumeRepsonse:
         # Fallback: match any unassigned project links by keyword
         parsed = _post_process_links(parsed, pdf_links)
 
-        return ResumeRepsonse(success=True, data=parsed)
+        return ResumeResponse(success=True, data=parsed)
 
     except Exception as e:
-        return ResumeRepsonse(success=False, error=str(e))
+        return ResumeResponse(success=False, error=str(e))

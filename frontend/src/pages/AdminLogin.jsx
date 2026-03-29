@@ -4,9 +4,8 @@ import {
   Lock, Eye, EyeOff, ShieldCheck, Trash2, AlertTriangle,
   RefreshCw, Users, FolderOpen, BarChart2, FileText,
 } from 'lucide-react';
-import { getContent, setContent } from '../utils/contentStore';
+import { saveContent } from '../utils/contentStore';
 import { API_BASE } from '../config';
-
 
 const mono = "'JetBrains Mono', monospace";
 const sans = "'Space Grotesk', sans-serif";
@@ -90,6 +89,16 @@ function AdminDashboard({ adminKey, onLogout }) {
   const [users, setUsers]           = useState([]);
   const [loadingData, setLoadingData] = useState(false);
 
+  // ── 30-minute session timeout ─────────────────────────────────────────────
+  const SESSION_MS = 30 * 60 * 1000;
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      alert('Admin session expired after 30 minutes of inactivity.');
+      onLogout();
+    }, SESSION_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
   const apiFetch = (path, opts = {}) =>
     fetch(`${API_BASE}${path}`, { ...opts, headers: { 'X-Admin-Key': adminKey, ...(opts.headers || {}) } });
 
@@ -149,7 +158,7 @@ function AdminDashboard({ adminKey, onLogout }) {
       {tab === 'overview'   && <OverviewTab stats={stats} onRefresh={refreshStats} />}
       {tab === 'portfolios' && <PortfoliosTab portfolios={portfolios} loading={loadingData} apiFetch={apiFetch} onRefresh={refreshPortfolios} />}
       {tab === 'users'      && <UsersTab users={users} loading={loadingData} apiFetch={apiFetch} onRefresh={refreshUsers} />}
-      {tab === 'content'    && <ContentTab />}
+      {tab === 'content'    && <ContentTab adminKey={adminKey} />}
       {tab === 'danger'     && <DangerTab stats={stats} apiFetch={apiFetch} onRefresh={refreshStats} />}
     </div>
   );
@@ -340,18 +349,42 @@ function Empty({ label }) {
 }
 
 // ── Content editor tab ────────────────────────────────────────────────────────
-function ContentTab() {
+function ContentTab({ adminKey }) {
   const pages = ['privacy', 'support', 'about'];
   const labels = { privacy: 'Privacy & Terms', support: 'Support', about: 'About' };
   const [activePage, setActivePage] = useState('privacy');
-  const [content, setLocalContent] = useState(() => getContent());
-  const [saved, setSaved] = useState(false);
+  const [content, setLocalContent] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState('');
 
-  const handleSave = () => {
-    setContent(content);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  // Load all pages from API on mount
+  useEffect(() => {
+    Promise.all(pages.map(async p => {
+      const res = await fetch(`${API_BASE}/content/${p}`).catch(() => null);
+      const data = res?.ok ? await res.json() : { title: labels[p], body: '' };
+      return [p, data];
+    })).then(entries => {
+      setLocalContent(Object.fromEntries(entries));
+      setLoading(false);
+    });
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true); setMsg('');
+    try {
+      const cur = content[activePage] || { title: '', body: '' };
+      await saveContent(activePage, cur.title, cur.body, adminKey);
+      setMsg('Saved successfully.');
+    } catch (e) {
+      setMsg(`Error: ${e.message}`);
+    } finally {
+      setSaving(false);
+      setTimeout(() => setMsg(''), 3000);
+    }
   };
+
+  if (loading) return <Spinner />;
 
   const cur = content[activePage] || { title: '', body: '' };
 
@@ -359,14 +392,9 @@ function ContentTab() {
     <div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
         {pages.map(p => (
-          <button key={p} onClick={() => setActivePage(p)} style={{
-            padding: '6px 14px', background: activePage === p ? 'rgba(255,255,255,0.12)' : 'none',
-            border: '1px solid rgba(255,255,255,0.15)', color: activePage === p ? '#fff' : 'rgba(255,255,255,0.5)',
-            fontFamily: mono, fontSize: 11, cursor: 'pointer', borderRadius: 2,
-          }}>{labels[p]}</button>
+          <button key={p} onClick={() => setActivePage(p)} style={{ padding: '6px 14px', background: activePage === p ? 'rgba(255,255,255,0.12)' : 'none', border: '1px solid rgba(255,255,255,0.15)', color: activePage === p ? '#fff' : 'rgba(255,255,255,0.5)', fontFamily: mono, fontSize: 11, cursor: 'pointer', borderRadius: 2 }}>{labels[p]}</button>
         ))}
       </div>
-
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div>
           <label style={{ fontFamily: mono, fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.15em', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Page Title</label>
@@ -374,16 +402,18 @@ function ContentTab() {
             style={{ width: '100%', padding: '10px 12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', fontFamily: mono, fontSize: 13, outline: 'none', borderRadius: 2, boxSizing: 'border-box' }} />
         </div>
         <div>
-          <label style={{ fontFamily: mono, fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.15em', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
-            Body (Markdown: ## Heading, **bold**)
-          </label>
+          <label style={{ fontFamily: mono, fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.15em', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Body (## Heading, **bold**, --- rule)</label>
           <textarea value={cur.body} rows={16}
             onChange={e => setLocalContent(c => ({ ...c, [activePage]: { ...cur, body: e.target.value } }))}
             style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.85)', fontFamily: mono, fontSize: 12, outline: 'none', borderRadius: 2, resize: 'vertical', lineHeight: 1.6, boxSizing: 'border-box' }} />
         </div>
-        <button onClick={handleSave} style={{ padding: '11px', background: saved ? 'rgba(0,110,47,0.3)' : 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: saved ? '#6bff8f' : '#fff', fontFamily: mono, fontSize: 12, cursor: 'pointer', borderRadius: 2 }}>
-          {saved ? '✓ Saved' : 'Save Changes'}
+        {msg && <div style={{ fontFamily: mono, fontSize: 11, color: msg.startsWith('Error') ? '#ff8a80' : '#6bff8f' }}>{msg}</div>}
+        <button onClick={handleSave} disabled={saving} style={{ padding: '11px', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontFamily: mono, fontSize: 12, cursor: saving ? 'not-allowed' : 'pointer', borderRadius: 2, opacity: saving ? 0.6 : 1 }}>
+          {saving ? 'Saving...' : 'Save to Database'}
         </button>
+        <p style={{ fontFamily: mono, fontSize: 9, color: 'rgba(255,255,255,0.3)', lineHeight: 1.5 }}>
+          Changes are saved to the database and visible to all users immediately.
+        </p>
       </div>
     </div>
   );

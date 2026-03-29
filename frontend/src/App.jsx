@@ -63,14 +63,32 @@ function HeroPage({ serverStatus, onResult }) {
     setIsLoading(true); setError(null);
     const fd = new FormData();
     fd.append('file', file);
-    try {
-      const res  = await fetch(`${API_BASE}/upload`, { method: 'POST', body: fd });
-      const json = await res.json();
-      if (!res.ok || !json.success) throw new Error(json.error || json.detail || 'Upload failed');
-      onResult(json.data);
-      navigate('/result');
-    } catch (err) { setError(err.message); }
-    finally { setIsLoading(false); }
+
+    // Exponential backoff retry — 3 attempts: 0ms, 1s, 3s
+    const delays = [0, 1000, 3000];
+    let lastErr = null;
+
+    for (let attempt = 0; attempt < delays.length; attempt++) {
+      if (delays[attempt] > 0) await new Promise(r => setTimeout(r, delays[attempt]));
+      try {
+        const res  = await fetch(`${API_BASE}/upload`, { method: 'POST', body: fd });
+        const json = await res.json();
+        if (!res.ok || !json.success) throw new Error(json.error || json.detail || 'Upload failed');
+        onResult(json.data);
+        navigate('/result');
+        setIsLoading(false);
+        return;
+      } catch (err) {
+        lastErr = err;
+        // Don't retry on client errors (4xx) — only on network/5xx
+        if (err.message && !err.message.includes('fetch') && attempt < delays.length - 1) {
+          break; // non-network error, stop retrying
+        }
+      }
+    }
+
+    setError(lastErr?.message || 'Upload failed');
+    setIsLoading(false);
   };
 
   const statusLabel = { online: 'System Status: Ready', warming: 'System Warming Up...', offline: 'System Offline', checking: 'Checking System...' }[serverStatus] ?? 'Checking...';
