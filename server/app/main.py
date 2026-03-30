@@ -59,7 +59,7 @@ def calculate_file_hash(file_path: str) -> str:
 
 # ── Config (all from env — never hardcoded) ───────────────────────────────────
 ADMIN_SECRET_KEY  = os.getenv("ADMIN_SECRET_KEY")
-ALLOWED_ORIGINS   = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")]
+ALLOWED_ORIGINS   = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,https://relak.netlify.app").split(",")]
 MAX_CONCURRENT    = int(os.getenv("MAX_CONCURRENT_JOBS", "3"))
 IS_PROD           = os.getenv("ENV", "dev") == "production"
 PAYMENT_ENABLED   = os.getenv("PAYMENT_ENABLED", "true").lower() == "true"
