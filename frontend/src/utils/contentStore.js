@@ -60,7 +60,7 @@ Specifically:
 - **Parsed resume data (paid):** Retained until you request deletion or we perform a manual purge. Paid records are never auto-deleted.
 - **Temp files:** Any residual files in our upload staging directory are deleted on server restart and by the cleanup routine.
 
-If you want your data deleted immediately, email us at support@relak.app with your name and we will manually remove it within 24 hours.
+If you want your data deleted immediately, email us at smk060506@gmail.com with your name and we will manually remove it within 24 hours.
 
 ---
 
@@ -94,7 +94,7 @@ We implement the following technical safeguards:
 
 You have the right to:
 - **Access** the data we hold about you
-- **Delete** your data at any time (email support@relak.app)
+- **Delete** your data at any time (email smk060506@gmail.com)
 - **Correct** any inaccurate data (use the inline editor before downloading)
 
 Since we do not collect email addresses at registration (no accounts), deletion requests are handled by name + approximate upload time.
@@ -134,7 +134,7 @@ These terms are governed by the laws of India. Any disputes shall be subject to 
     title: 'Support',
     body: `## Get Help
 
-**Email:** support@relak.app
+**Email:** smk060506@gmail.com
 
 **Response time:** Within 24 hours on business days.
 
@@ -158,7 +158,7 @@ No — each generation costs ₹20. Switching between the 3 styles is free withi
 Unpaid resume data is automatically deleted within 2 hours of upload. Paid data is retained until you request deletion. Your original PDF is deleted immediately after parsing.
 
 **I want my data deleted.**
-Email support@relak.app with your name and approximate upload time. We will remove it within 24 hours.
+Email smk060506@gmail.com with your name and approximate upload time. We will remove it within 24 hours.
 
 **The links in my PDF are wrong.**
 Use Edit mode (after unlocking) to correct project links directly in the preview. Google Drive links are automatically removed — only GitHub and demo URLs are kept.`,
@@ -221,10 +221,12 @@ export async function fetchContent(key) {
     const res = await fetch(`${API_BASE}/content/${key}`, { signal: AbortSignal.timeout(4000) });
     if (res.ok) {
       const data = await res.json();
-      // Update cache entry for this key
-      const cached = readCache() || {};
-      writeCache({ ...cached, [key]: data });
-      return data;
+      // If the server returned empty body, fall through to defaults
+      if (data?.body) {
+        const cached = readCache() || {};
+        writeCache({ ...cached, [key]: data });
+        return data;
+      }
     }
   } catch { /* network error — fall through */ }
 
