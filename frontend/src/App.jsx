@@ -8,14 +8,15 @@ import BuildPage from './pages/BuildPage';
 import AdminLogin from './pages/AdminLogin';
 import ContentPage from './pages/ContentPage';
 import { Rocket, PenLine, AlertTriangle } from 'lucide-react';
-import { API_BASE } from './config';
+import { API_BASE, ADMIN_PATH, PRICE_INR } from './config';
 import { sanitizeResumeData } from './utils/sanitize';
 
 export default function App() {
   const [resumeData, setResumeData]         = useState(null);
   const [resumeSlug, setResumeSlug]         = useState(null);
   const [serverStatus, setServerStatus]     = useState('checking');
-  const [paymentEnabled, setPaymentEnabled] = useState(true); // default true until fetched
+  const [paymentEnabled, setPaymentEnabled] = useState(null); // null = loading, true/false from server
+  const [isAdmin, setIsAdmin]               = useState(() => !!sessionStorage.getItem('relak-admin'));
 
   // On tab close: fire beacon to delete unpaid session data from DB + clear state
   useEffect(() => {
@@ -61,15 +62,33 @@ export default function App() {
   }, []);
 
   return (
-    <Routes>
-      <Route path="/"       element={<HeroPage serverStatus={serverStatus} onResult={(data, slug) => { setResumeData(data); setResumeSlug(slug); }} />} />
-      <Route path="/result" element={<ResultPage resumeData={resumeData} setResumeData={setResumeData} serverStatus={serverStatus} paymentEnabled={paymentEnabled} resumeSlug={resumeSlug} />} />
-      <Route path="/build"  element={<BuildPage onResult={setResumeData} serverStatus={serverStatus} />} />
-      <Route path="/privacy" element={<ContentPage pageKey="privacy" serverStatus={serverStatus} />} />
-      <Route path="/support" element={<ContentPage pageKey="support" serverStatus={serverStatus} />} />
-      <Route path="/about"   element={<ContentPage pageKey="about"   serverStatus={serverStatus} />} />
-      <Route path="/home/admins-login" element={<AdminLogin />} />
-    </Routes>
+    <>
+      {/* ── Dev banner ── */}
+      <div style={{
+        position: 'fixed', bottom: 16, left: 16, zIndex: 9999,
+        background: '#ba1a1a', color: '#ffffff',
+        fontFamily: "'JetBrains Mono', monospace", fontSize: 9,
+        letterSpacing: '0.12em', textTransform: 'uppercase',
+        padding: '5px 10px',
+        display: 'flex', alignItems: 'center', gap: 6,
+        boxShadow: '0 2px 8px rgba(186,26,26,0.4)',
+        pointerEvents: 'none',
+      }}>
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', opacity: 0.8, animation: 'pulse 1.5s ease-in-out infinite', flexShrink: 0 }} />
+        Under Development
+      </div>
+
+      <Routes>
+        <Route path="/"       element={<HeroPage serverStatus={serverStatus} onResult={(data, slug) => { setResumeData(data); setResumeSlug(slug); }} />} />
+        <Route path="/result" element={<ResultPage resumeData={resumeData} setResumeData={setResumeData} serverStatus={serverStatus} paymentEnabled={paymentEnabled} resumeSlug={resumeSlug} isAdmin={isAdmin} />} />
+        <Route path="/build"  element={<BuildPage onResult={setResumeData} serverStatus={serverStatus} />} />
+        <Route path="/privacy" element={<ContentPage pageKey="privacy" serverStatus={serverStatus} />} />
+        <Route path="/support" element={<ContentPage pageKey="support" serverStatus={serverStatus} />} />
+        <Route path="/about"   element={<ContentPage pageKey="about"   serverStatus={serverStatus} />} />
+        <Route path="/home/admins-login" element={<AdminLogin />} />
+        {ADMIN_PATH !== '/home/admins-login' && <Route path={ADMIN_PATH} element={<AdminLogin />} />}
+      </Routes>
+    </>
   );
 }
 
@@ -138,7 +157,7 @@ function HeroPage({ serverStatus, onResult }) {
                 <p className="hero-sub">
                   Turn your PDF into a polished resume in 60 seconds.
                   Optimized with AI power-verbs.{' '}
-                  <span className="hero-sub-price">₹20</span> per build.
+                  <span className="hero-sub-price">₹{PRICE_INR}</span> per build.
                 </p>
               </div>
 
@@ -165,7 +184,7 @@ function HeroPage({ serverStatus, onResult }) {
 
               <div className="specs-grid">
                 <div className="spec-cell"><span className="spec-label">Latency</span><span className="spec-value">~60s</span></div>
-                <div className="spec-cell"><span className="spec-label">AI Model</span><span className="spec-value">Gemini</span></div>
+                <div className="spec-cell"><span className="spec-label">Engine</span><span className="spec-value">Neural</span></div>
               </div>
             </div>
 

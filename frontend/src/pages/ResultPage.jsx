@@ -9,6 +9,7 @@ import ClassicPreview from '../components/ClassicPreview';
 import PaymentModal from '../components/PaymentModal';
 import { downloadBlueprintPdf } from '../utils/downloadPdf';
 import { SAMPLE_DATA } from '../utils/sampleData';
+import { PRICE_INR } from '../config';
 
 // ── Countdown: shows time until data self-destructs (created_at + 2h) ────────
 function CountdownTimer({ createdAt }) {
@@ -54,7 +55,7 @@ function CountdownTimer({ createdAt }) {
   );
 }
 
-export default function ResultPage({ resumeData, setResumeData, serverStatus, paymentEnabled = true, resumeSlug }) {
+export default function ResultPage({ resumeData, setResumeData, serverStatus, paymentEnabled = false, resumeSlug, isAdmin = false }) {
   const navigate = useNavigate();
   const [styleId, setStyleId]             = useState(2);
   const [isPaid, setIsPaid]               = useState(false);
@@ -65,10 +66,19 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus, pa
   const data   = resumeData || SAMPLE_DATA;
   const isDemo = !resumeData;
 
-  // In demo mode (PAYMENT_ENABLED=false) unlock immediately
+  // Admin always gets free access
   useEffect(() => {
-    if (!paymentEnabled) setIsPaid(true);
-  }, [paymentEnabled]);
+    if (isAdmin) setIsPaid(true);
+  }, [isAdmin]);
+
+  // Show payment modal immediately when real resume loads and not yet paid
+  useEffect(() => {
+    if (!isDemo && !isPaid && !isAdmin && paymentEnabled !== null) {
+      // Small delay so the page renders first, then modal appears
+      const t = setTimeout(() => setShowPayment(true), 400);
+      return () => clearTimeout(t);
+    }
+  }, [isDemo, isPaid, isAdmin, paymentEnabled]);
 
   const handleDownload = async () => {
     if (!isPaid) { setShowPayment(true); return; }
@@ -109,11 +119,6 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus, pa
               {!isDemo && !isPaid && data._created_at && (
                 <CountdownTimer createdAt={data._created_at} />
               )}
-              {!paymentEnabled && (
-                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'var(--gold)', background: 'rgba(201,168,76,0.12)', border: '1px solid var(--gold)', padding: '2px 8px', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                  DEMO MODE
-                </span>
-              )}
             </div>
 
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -132,7 +137,7 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus, pa
                 </button>
               ) : (
                 <button onClick={() => setShowPayment(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 22px', background: 'var(--blue)', color: 'var(--gold)', fontFamily: "'JetBrains Mono',monospace", fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', borderRadius: 2, boxShadow: '0 3px 0 0 var(--blue-dark)' }}>
-                  <Lock size={13} /> Unlock for ₹20
+                  <Lock size={13} /> Unlock for ₹{PRICE_INR}
                 </button>
               )}
             </div>
@@ -174,7 +179,7 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus, pa
                     Unlock all 3 styles, inline editing, and unlimited PDF downloads.
                   </p>
                   <button onClick={() => setShowPayment(true)} style={{ width: '100%', padding: '13px', background: 'var(--blue)', color: 'var(--gold)', fontFamily: "'JetBrains Mono',monospace", fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer', borderRadius: 2, boxShadow: '0 4px 0 0 var(--blue-dark)' }}>
-                    Unlock for ₹20
+                    Unlock for ₹{PRICE_INR}
                   </button>
                   <div style={{ marginTop: 10, fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'var(--text-dim)', letterSpacing: '0.05em' }}>One-time · No subscription · Lifetime access</div>
                 </div>

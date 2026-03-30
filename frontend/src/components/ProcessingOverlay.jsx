@@ -186,7 +186,7 @@ export default function ProcessingOverlay({ visible }) {
           <span style={{
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: 9, color: '#c3c6d1', letterSpacing: '0.1em',
-          }}>RELAK_ENGINE v1.0 // GEMINI-2.5-FLASH</span>
+          }}>RELAK_ENGINE v1.0</span>
           <span style={{
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: 9, color: '#c3c6d1',

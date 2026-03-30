@@ -1,5 +1,6 @@
 import os
 import re
+import hmac
 import shutil
 import hashlib
 import asyncio
@@ -8,6 +9,8 @@ import logging
 import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
+
+import razorpay as razorpay_sdk
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Header, Request, Response, Body, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -188,23 +191,22 @@ async def get_config():
 
 @app.post("/payment/create-order")
 async def create_order(payload: dict = Body(...), db: Session = Depends(get_db)):
-    """
-    Create a Razorpay order for ₹20. In demo mode returns a fake order.
-    """
+    """Create a Razorpay order. In demo mode returns a fake order."""
     portfolio_slug = payload.get("portfolio_slug")
     if not portfolio_slug:
         raise HTTPException(status_code=422, detail="portfolio_slug is required")
 
+    amount = int(payload.get("amount", 2100))  # paise — ₹21
+
     if not PAYMENT_ENABLED:
-        return {"id": "demo_order", "amount": 2000, "currency": "INR"}
+        return {"id": "demo_order", "amount": amount, "currency": "INR"}
 
     if not RAZORPAY_KEY_ID or not RAZORPAY_SECRET:
         raise HTTPException(status_code=503, detail="Payment not configured")
 
-    import razorpay
-    client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_SECRET))
+    client = razorpay_sdk.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_SECRET))
     order = client.order.create({
-        "amount": 2000,  # ₹20 in paise
+        "amount": amount,
         "currency": "INR",
         "receipt": portfolio_slug[:40],
         "payment_capture": 1,
@@ -238,11 +240,10 @@ async def verify_payment(payload: dict = Body(...), db: Session = Depends(get_db
     if not all([order_id, payment_id, signature]):
         raise HTTPException(status_code=422, detail="Missing Razorpay fields")
 
-    import hmac, hashlib as _hl
     expected = hmac.new(
         RAZORPAY_SECRET.encode(),
         f"{order_id}|{payment_id}".encode(),
-        _hl.sha256,
+        hashlib.sha256,
     ).hexdigest()
 
     if not secrets.compare_digest(expected, signature):
@@ -440,7 +441,7 @@ def get_admin_stats(db: Session = Depends(get_db)):
         "users":           db.query(User).count(),
         "portfolios":      db.query(Portfolio).count(),
         "paid_portfolios": paid,
-        "revenue_inr":     paid * 20,
+        "revenue_inr":     paid * 21,
     }
 
 

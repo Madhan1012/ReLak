@@ -11,3 +11,4 @@ google-genai==1.68.0
 slowapi==0.1.9
 apscheduler==3.11.2
 python-multipart==0.0.22
+razorpay==1.4.1

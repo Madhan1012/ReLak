@@ -1,73 +1,53 @@
+import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 /**
- * Generates a selectable-text PDF from the resume preview element.
- * Uses jsPDF's html() renderer which preserves text as real PDF text objects
- * (not a rasterized image), so the user can select/copy text in the PDF.
- *
- * Max 2 A4 pages. Dynamic filename: {user_name}_ReLak_{style}.pdf
+ * Captures the resume preview and exports a PDF.
+ * Uses html2canvas for reliable rendering across all resume styles.
+ * Filename: {user_name}_ReLak_{style}.pdf
+ * Max 2 A4 pages.
  */
-export async function downloadBlueprintPdf(elementId, _legacyFilename, styleName = 'style', userName = 'user') {
+export async function downloadBlueprintPdf(elementId, _legacy, styleName = 'style', userName = 'user') {
   const element = document.getElementById(elementId);
-  if (!element) return;
+  if (!element) { console.error('Preview element not found:', elementId); return; }
 
   const cleanName  = (userName  || 'user').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
   const cleanStyle = (styleName || 'style').toLowerCase().replace(/\s+/g, '-');
   const filename   = `${cleanName}_ReLak_${cleanStyle}.pdf`;
 
-  const pdf = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4',
-    compress: true,
+  const canvas = await html2canvas(element, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: '#ffffff',
+    logging: false,
+    imageTimeout: 0,
+    width:  element.scrollWidth,
+    height: element.scrollHeight,
   });
 
+  const pdf  = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
   const pdfW = pdf.internal.pageSize.getWidth();   // 210mm
   const pdfH = pdf.internal.pageSize.getHeight();  // 297mm
 
-  // Clone the element so we can strip edit-mode controls without affecting the UI
-  const clone = element.cloneNode(true);
-  clone.style.position = 'fixed';
-  clone.style.top      = '-9999px';
-  clone.style.left     = '-9999px';
-  clone.style.width    = element.offsetWidth + 'px';
-  clone.style.background = '#ffffff';
-  // Remove any interactive/edit-only elements from the clone
-  clone.querySelectorAll('button, input, [contenteditable]').forEach(el => {
-    if (el.tagName === 'INPUT') {
-      const span = document.createElement('span');
-      span.textContent = el.value;
-      span.style.cssText = el.style.cssText;
-      el.replaceWith(span);
-    } else if (el.getAttribute('contenteditable')) {
-      el.removeAttribute('contenteditable');
-    } else {
-      el.remove();
-    }
-  });
-  document.body.appendChild(clone);
+  const pageHeightPx = Math.round((pdfH / pdfW) * canvas.width);
+  let yOffset = 0;
+  let pageNum = 0;
 
-  try {
-    await new Promise((resolve, reject) => {
-      pdf.html(clone, {
-        callback: (doc) => {
-          doc.save(filename);
-          resolve();
-        },
-        x: 0,
-        y: 0,
-        width: pdfW,
-        windowWidth: element.offsetWidth,
-        margin: [0, 0, 0, 0],
-        autoPaging: 'text',
-        html2canvas: {
-          scale: 0.264583, // 1px = 0.264583mm at 96dpi → maps px to mm
-          useCORS: true,
-          logging: false,
-        },
-      });
-    });
-  } finally {
-    document.body.removeChild(clone);
+  while (yOffset < canvas.height && pageNum < 2) {
+    if (pageNum > 0) pdf.addPage();
+
+    const sliceH = Math.min(pageHeightPx, canvas.height - yOffset);
+    const slice  = document.createElement('canvas');
+    slice.width  = canvas.width;
+    slice.height = sliceH;
+    slice.getContext('2d').drawImage(canvas, 0, yOffset, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+
+    const imgData = slice.toDataURL('image/jpeg', 0.92);
+    pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, sliceH * (pdfW / canvas.width));
+
+    yOffset += pageHeightPx;
+    pageNum++;
   }
+
+  pdf.save(filename);
 }

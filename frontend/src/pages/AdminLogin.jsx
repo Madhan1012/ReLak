@@ -29,6 +29,7 @@ export default function AdminLogin() {
       const res = await fetch(`${API_BASE}/admin/stats`, { headers: { 'X-Admin-Key': key.trim() } });
       if (!res.ok) throw new Error('Invalid admin key');
       setAdminKey(key.trim());
+      sessionStorage.setItem('relak-admin', '1');
       setAuthed(true);
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
@@ -70,7 +71,7 @@ export default function AdminLogin() {
             </div>
           </form>
         ) : (
-          <AdminDashboard adminKey={adminKey} onLogout={() => { setAuthed(false); setKey(''); setAdminKey(''); }} />
+          <AdminDashboard adminKey={adminKey} onLogout={() => { sessionStorage.removeItem('relak-admin'); setAuthed(false); setKey(''); setAdminKey(''); }} />
         )}
 
         <div style={{ textAlign: 'center', marginTop: 24 }}>

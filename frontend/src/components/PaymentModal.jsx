@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, CreditCard, CheckCircle, Lock, Shield, AlertTriangle } from 'lucide-react';
-import { API_BASE } from '../config';
+import { API_BASE, PRICE_INR } from '../config';
 
 /**
  * PaymentModal
@@ -95,7 +95,7 @@ export default function PaymentModal({ onClose, onSuccess, resumeName, portfolio
       const orderRes = await fetch(`${API_BASE}/payment/create-order`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ portfolio_slug: portfolioSlug }),
+        body:    JSON.stringify({ portfolio_slug: portfolioSlug, amount: PRICE_INR * 100 }),
       });
       const order = await orderRes.json();
       if (!orderRes.ok || !order.id) throw new Error(order.detail || 'Order creation failed');
@@ -158,8 +158,7 @@ export default function PaymentModal({ onClose, onSuccess, resumeName, portfolio
               </span>
               <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, fontWeight: 700, color: '#001e40', marginBottom: 6 }}>
                 {resumeName ? `${resumeName}'s Resume` : 'Your Resume'} is Ready
-              </h2>
-              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: '#43474f', lineHeight: 1.6 }}>
+              </h2>              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: '#43474f', lineHeight: 1.6 }}>
                 One-time payment. All 3 styles, inline editing, and PDF download included.
               </p>
             </div>
@@ -183,7 +182,7 @@ export default function PaymentModal({ onClose, onSuccess, resumeName, portfolio
                 <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: '#43474f', display: 'block' }}>Total (one-time)</span>
                 <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: '#737780', marginTop: 2, display: 'block' }}>Per resume — not per style</span>
               </div>
-              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 24, fontWeight: 700, color: '#001e40' }}>₹20</span>
+              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 24, fontWeight: 700, color: '#001e40' }}>₹{PRICE_INR}</span>
             </div>
 
             {!paymentEnabled && (
@@ -203,7 +202,7 @@ export default function PaymentModal({ onClose, onSuccess, resumeName, portfolio
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
               boxShadow: '0 4px 0 0 #001e40', borderRadius: 2,
             }}>
-              <CreditCard size={16} /> Pay ₹20 via Razorpay
+              <CreditCard size={16} /> Pay ₹{PRICE_INR} via Razorpay
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12 }}>
