@@ -1,32 +1,19 @@
-import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 /**
- * Captures #blueprint-preview and exports a compressed PDF.
- * - JPEG 82% quality + scale 1.5 keeps output well under 2MB.
- * - For Classic style (A4-sized element) we render at exactly A4 width.
- * - Dynamic filename: {user_name}_ReLak_{style}.pdf
- * - Enforces max 2 pages with break-inside: avoid on cards
+ * Generates a selectable-text PDF from the resume preview element.
+ * Uses jsPDF's html() renderer which preserves text as real PDF text objects
+ * (not a rasterized image), so the user can select/copy text in the PDF.
+ *
+ * Max 2 A4 pages. Dynamic filename: {user_name}_ReLak_{style}.pdf
  */
-export async function downloadBlueprintPdf(elementId, filename = 'relak-resume.pdf', styleName = 'style', userName = 'user') {
+export async function downloadBlueprintPdf(elementId, _legacyFilename, styleName = 'style', userName = 'user') {
   const element = document.getElementById(elementId);
   if (!element) return;
 
-  // Dynamic filename: {user_name}_ReLak_{style}.pdf
-  const cleanName = (userName || 'user').toLowerCase().replace(/\s+/g, '-');
+  const cleanName  = (userName  || 'user').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
   const cleanStyle = (styleName || 'style').toLowerCase().replace(/\s+/g, '-');
-  const finalFilename = `${cleanName}_ReLak_${cleanStyle}.pdf`;
-
-  const canvas = await html2canvas(element, {
-    scale: 1.5,
-    useCORS: true,
-    backgroundColor: '#ffffff',
-    logging: false,
-    imageTimeout: 0,
-    // Render at the element's natural width so A4 layouts aren't stretched
-    width: element.scrollWidth,
-    height: element.scrollHeight,
-  });
+  const filename   = `${cleanName}_ReLak_${cleanStyle}.pdf`;
 
   const pdf = new jsPDF({
     orientation: 'portrait',
@@ -38,30 +25,49 @@ export async function downloadBlueprintPdf(elementId, filename = 'relak-resume.p
   const pdfW = pdf.internal.pageSize.getWidth();   // 210mm
   const pdfH = pdf.internal.pageSize.getHeight();  // 297mm
 
-  // How many canvas pixels fit in one A4 page height
-  const pageHeightPx = Math.round((pdfH / pdfW) * canvas.width);
+  // Clone the element so we can strip edit-mode controls without affecting the UI
+  const clone = element.cloneNode(true);
+  clone.style.position = 'fixed';
+  clone.style.top      = '-9999px';
+  clone.style.left     = '-9999px';
+  clone.style.width    = element.offsetWidth + 'px';
+  clone.style.background = '#ffffff';
+  // Remove any interactive/edit-only elements from the clone
+  clone.querySelectorAll('button, input, [contenteditable]').forEach(el => {
+    if (el.tagName === 'INPUT') {
+      const span = document.createElement('span');
+      span.textContent = el.value;
+      span.style.cssText = el.style.cssText;
+      el.replaceWith(span);
+    } else if (el.getAttribute('contenteditable')) {
+      el.removeAttribute('contenteditable');
+    } else {
+      el.remove();
+    }
+  });
+  document.body.appendChild(clone);
 
-  let yOffset = 0;
-  let pageNum = 0;
-
-  while (yOffset < canvas.height) {
-    if (pageNum > 0) pdf.addPage();
-
-    const sliceH = Math.min(pageHeightPx, canvas.height - yOffset);
-    const slice  = document.createElement('canvas');
-    slice.width  = canvas.width;
-    slice.height = sliceH;
-    slice.getContext('2d').drawImage(canvas, 0, yOffset, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
-
-    const imgData = slice.toDataURL('image/jpeg', 0.82);
-    pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, sliceH * (pdfW / canvas.width));
-
-    yOffset += pageHeightPx;
-    pageNum++;
-    
-    // Max 2 pages enforcement
-    if (pageNum >= 2) break;
+  try {
+    await new Promise((resolve, reject) => {
+      pdf.html(clone, {
+        callback: (doc) => {
+          doc.save(filename);
+          resolve();
+        },
+        x: 0,
+        y: 0,
+        width: pdfW,
+        windowWidth: element.offsetWidth,
+        margin: [0, 0, 0, 0],
+        autoPaging: 'text',
+        html2canvas: {
+          scale: 0.264583, // 1px = 0.264583mm at 96dpi → maps px to mm
+          useCORS: true,
+          logging: false,
+        },
+      });
+    });
+  } finally {
+    document.body.removeChild(clone);
   }
-
-  pdf.save(finalFilename);
 }

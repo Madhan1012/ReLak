@@ -141,7 +141,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_methods=["GET", "POST", "PATCH", "DELETE"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "PUT"],
     allow_headers=["*"],
     allow_credentials=False,
 )
@@ -185,6 +185,32 @@ async def get_config():
     return {"payment_enabled": PAYMENT_ENABLED}
 
 
+@app.post("/payment/create-order")
+async def create_order(payload: dict = Body(...), db: Session = Depends(get_db)):
+    """
+    Create a Razorpay order for ₹20. In demo mode returns a fake order.
+    """
+    portfolio_slug = payload.get("portfolio_slug")
+    if not portfolio_slug:
+        raise HTTPException(status_code=422, detail="portfolio_slug is required")
+
+    if not PAYMENT_ENABLED:
+        return {"id": "demo_order", "amount": 2000, "currency": "INR"}
+
+    if not RAZORPAY_KEY_ID or not RAZORPAY_SECRET:
+        raise HTTPException(status_code=503, detail="Payment not configured")
+
+    import razorpay
+    client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_SECRET))
+    order = client.order.create({
+        "amount": 2000,  # ₹20 in paise
+        "currency": "INR",
+        "receipt": portfolio_slug[:40],
+        "payment_capture": 1,
+    })
+    return order
+
+
 @app.post("/payment/verify")
 async def verify_payment(payload: dict = Body(...), db: Session = Depends(get_db)):
     """
@@ -196,7 +222,7 @@ async def verify_payment(payload: dict = Body(...), db: Session = Depends(get_db
         raise HTTPException(status_code=422, detail="portfolio_id is required")
 
     # ── Demo mode bypass ──────────────────────────────────────────────────────
-    if not PAYMENT_ENABLED:
+    if not PAYMENT_ENABLED or payload.get("demo_mode"):
         row = db.query(Portfolio).filter(Portfolio.slug == portfolio_id).first()
         if row:
             row.is_paid = True
@@ -282,13 +308,12 @@ async def upload_resume(
 
         if existing_portfolio:
             log.info(f"Deduplication hit: {safe_name} (hash: {file_hash[:8]}...)")
-            # Return existing data to prevent duplicate AI call
-            # Include created_at for countdown timer
             existing_data = PortfolioData(**existing_portfolio.resume_data)
             existing_data._created_at = existing_portfolio.created_at.isoformat()
             return ResumeResponse(
                 success=True,
-                data=existing_data
+                data=existing_data,
+                slug=existing_portfolio.slug,
             )
 
         log.info(f"Upload queued: {safe_name} ({file.size} bytes)")
@@ -310,16 +335,14 @@ async def upload_resume(
                 existing.resume_data = result.data.model_dump()
                 existing.created_at  = datetime.datetime.utcnow()
                 db.commit()
-                # Return the result with the existing slug
-                # Include created_at for countdown timer
                 result.data._created_at = existing.created_at.isoformat()
+                result.slug = existing.slug
                 return result
 
             # New portfolio: create a unique, unguessable slug
             base_slug = result.data.name.lower().replace(" ", "-")
-            # Remove non-alphanumeric from slug
             base_slug = "".join(c for c in base_slug if c.isalnum() or c == "-")
-            random_suffix = secrets.token_hex(3) # 6 chars
+            random_suffix = secrets.token_hex(3)
             unique_slug = f"{base_slug}-{random_suffix}"
 
             db.add(Portfolio(
@@ -330,10 +353,10 @@ async def upload_resume(
             ))
             db.commit()
 
-            # Reload the portfolio to get created_at
             new_portfolio = db.query(Portfolio).filter(Portfolio.slug == unique_slug).first()
             if new_portfolio:
                 result.data._created_at = new_portfolio.created_at.isoformat()
+            result.slug = unique_slug
 
             # Auto-trim: if total records >= 40, delete 20 oldest unpaid
             total = db.query(Portfolio).count()
@@ -361,6 +384,27 @@ async def upload_resume(
     finally:
         if temp_path.exists():
             os.remove(temp_path)
+
+
+@app.delete("/session/cleanup")
+async def session_cleanup(payload: dict = Body(...), db: Session = Depends(get_db)):
+    """
+    Called via navigator.sendBeacon on tab close.
+    Deletes the unpaid portfolio for the given slug so no stale data lingers.
+    """
+    slug = payload.get("slug")
+    if not slug:
+        return {"ok": False}
+    row = db.query(Portfolio).filter(
+        Portfolio.slug == slug,
+        Portfolio.is_paid == False,
+    ).first()
+    if row:
+        db.delete(row)
+        db.commit()
+        log.info(f"Session cleanup: deleted unpaid portfolio {slug[:8]}...")
+    return {"ok": True}
+
 
 
 @app.delete("/cleanup", dependencies=[Depends(verify_admin)])

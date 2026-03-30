@@ -13,9 +13,11 @@ import { sanitizeResumeData } from './utils/sanitize';
 
 export default function App() {
   const [resumeData, setResumeData]         = useState(null);
+  const [resumeSlug, setResumeSlug]         = useState(null);
   const [serverStatus, setServerStatus]     = useState('checking');
   const [paymentEnabled, setPaymentEnabled] = useState(true); // default true until fetched
 
+  // On tab close: fire beacon to delete unpaid session data from DB + clear state
   useEffect(() => {
     const handler = (e) => {
       if (!resumeData) return;
@@ -25,6 +27,17 @@ export default function App() {
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [resumeData]);
+
+  useEffect(() => {
+    const cleanup = () => {
+      if (!resumeSlug) return;
+      // sendBeacon is fire-and-forget, works even as tab closes
+      const blob = new Blob([JSON.stringify({ slug: resumeSlug })], { type: 'application/json' });
+      navigator.sendBeacon(`${API_BASE}/session/cleanup`, blob);
+    };
+    window.addEventListener('beforeunload', cleanup);
+    return () => window.removeEventListener('beforeunload', cleanup);
+  }, [resumeSlug]);
 
   useEffect(() => {
     let attempts = 0;
@@ -49,8 +62,8 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/"       element={<HeroPage serverStatus={serverStatus} onResult={setResumeData} />} />
-      <Route path="/result" element={<ResultPage resumeData={resumeData} setResumeData={setResumeData} serverStatus={serverStatus} paymentEnabled={paymentEnabled} />} />
+      <Route path="/"       element={<HeroPage serverStatus={serverStatus} onResult={(data, slug) => { setResumeData(data); setResumeSlug(slug); }} />} />
+      <Route path="/result" element={<ResultPage resumeData={resumeData} setResumeData={setResumeData} serverStatus={serverStatus} paymentEnabled={paymentEnabled} resumeSlug={resumeSlug} />} />
       <Route path="/build"  element={<BuildPage onResult={setResumeData} serverStatus={serverStatus} />} />
       <Route path="/privacy" element={<ContentPage pageKey="privacy" serverStatus={serverStatus} />} />
       <Route path="/support" element={<ContentPage pageKey="support" serverStatus={serverStatus} />} />
@@ -87,7 +100,7 @@ function HeroPage({ serverStatus, onResult }) {
         const res  = await fetch(`${API_BASE}/upload`, { method: 'POST', body: fd });
         const json = await res.json();
         if (!res.ok || !json.success) throw new Error(json.error || json.detail || 'Upload failed');
-        onResult(sanitizeResumeData(json.data));
+        onResult(sanitizeResumeData(json.data), json.slug);
         navigate('/result');
         setIsLoading(false);
         return;
@@ -151,8 +164,8 @@ function HeroPage({ serverStatus, onResult }) {
               </div>
 
               <div className="specs-grid">
-                <div className="spec-cell"><span className="spec-label">Latency</span><span className="spec-value">0.8s</span></div>
-                <div className="spec-cell"><span className="spec-label">Architecture</span><span className="spec-value">Neural</span></div>
+                <div className="spec-cell"><span className="spec-label">Latency</span><span className="spec-value">~60s</span></div>
+                <div className="spec-cell"><span className="spec-label">AI Model</span><span className="spec-value">Gemini</span></div>
               </div>
             </div>
 

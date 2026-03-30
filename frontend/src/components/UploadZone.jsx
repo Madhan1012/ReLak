@@ -27,7 +27,6 @@ export default function UploadZone({ onFileSelect, onJobDescriptionChange, isLoa
 
   return (
     <div className="upload-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Architectural corner marks */}
       <div className="corner-mark corner-tl" />
       <div className="corner-mark corner-tr" />
       <div className="corner-mark corner-bl" />
@@ -41,7 +40,6 @@ export default function UploadZone({ onFileSelect, onJobDescriptionChange, isLoa
         onDrop={onDrop}
       >
         <input
-          id="upload-input"
           ref={inputRef}
           type="file"
           accept=".pdf,.docx"
@@ -69,32 +67,21 @@ export default function UploadZone({ onFileSelect, onJobDescriptionChange, isLoa
           </>
         )}
 
-        {/* Blueprint geometric decoration */}
         <div className="bp-deco">
-          <div className="bp-deco-outer">
-            <div className="bp-deco-inner" />
-          </div>
+          <div className="bp-deco-outer"><div className="bp-deco-inner" /></div>
         </div>
       </div>
 
       {!isLoading && (
-        <div className="jd-container" style={{
+        <div style={{
           background: 'var(--bg-card)',
           border: '1px solid var(--border)',
           padding: '16px',
-          borderRadius: '4px',
-          position: 'relative'
         }}>
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            marginBottom: 10,
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 10,
-            color: 'var(--blue)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em'
+            display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10,
+            fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
+            color: 'var(--blue)', textTransform: 'uppercase', letterSpacing: '0.1em',
           }}>
             <Briefcase size={12} />
             <span>[ Optional ] Tailor to Job Description</span>
@@ -104,28 +91,16 @@ export default function UploadZone({ onFileSelect, onJobDescriptionChange, isLoa
             value={jd}
             onChange={handleJdChange}
             style={{
-              width: '100%',
-              minHeight: '100px',
+              width: '100%', minHeight: '100px',
               background: 'var(--input-bg)',
               border: '1px solid var(--border-solid)',
-              borderRadius: '2px',
-              padding: '10px',
-              color: 'var(--text)',
-              fontSize: '13px',
-              fontFamily: "'Inter', sans-serif",
-              resize: 'vertical',
-              outline: 'none',
-              boxSizing: 'border-box'
+              padding: '10px', color: 'var(--text)',
+              fontSize: '13px', fontFamily: "'Inter', sans-serif",
+              resize: 'vertical', outline: 'none', boxSizing: 'border-box',
             }}
           />
-          <p style={{
-            marginTop: 8,
-            fontSize: 10,
-            color: 'var(--text-dim)',
-            fontFamily: "'Inter', sans-serif",
-            lineHeight: 1.4
-          }}>
-            Our AI will prioritize skills and highlight experiences that match the requirements of this JD.
+          <p style={{ marginTop: 8, fontSize: 10, color: 'var(--text-dim)', fontFamily: "'Inter', sans-serif", lineHeight: 1.4 }}>
+            AI will prioritize skills and highlight experiences that match this JD.
           </p>
         </div>
       )}
@@ -140,7 +115,6 @@ function ProcessingIndicator() {
     'Optimizing with power-verbs...',
     'Assigning tech stack icons...',
   ];
-
   return (
     <div className="processing-wrap">
       <div className="processing-title">◉ AI Engine Processing...</div>
@@ -149,10 +123,7 @@ function ProcessingIndicator() {
           <div key={i} className="processing-step">
             <span className="step-coord">[{String(i + 1).padStart(2, '0')}]</span>
             <div className="step-bar">
-              <div
-                className="step-fill"
-                style={{ animationDelay: `${i * 0.35}s`, animationDuration: `${0.7 + i * 0.3}s` }}
-              />
+              <div className="step-fill" style={{ animationDelay: `${i * 0.35}s`, animationDuration: `${0.7 + i * 0.3}s` }} />
             </div>
             <span className="step-label">{step}</span>
           </div>

@@ -54,7 +54,7 @@ function CountdownTimer({ createdAt }) {
   );
 }
 
-export default function ResultPage({ resumeData, setResumeData, serverStatus, paymentEnabled = true }) {
+export default function ResultPage({ resumeData, setResumeData, serverStatus, paymentEnabled = true, resumeSlug }) {
   const navigate = useNavigate();
   const [styleId, setStyleId]             = useState(2);
   const [isPaid, setIsPaid]               = useState(false);
@@ -106,11 +106,9 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus, pa
                   {isDemo ? 'Sample Preview' : 'AI Generated Blueprint'}
                 </span>
               </div>
-              {/* Countdown — only for real (non-demo) unpaid data */}
               {!isDemo && !isPaid && data._created_at && (
                 <CountdownTimer createdAt={data._created_at} />
               )}
-              {/* Demo mode badge */}
               {!paymentEnabled && (
                 <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'var(--gold)', background: 'rgba(201,168,76,0.12)', border: '1px solid var(--gold)', padding: '2px 8px', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
                   DEMO MODE
@@ -127,7 +125,6 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus, pa
                   {editMode ? <><Eye size={13} /> Preview</> : <><Pencil size={13} /> Edit</>}
                 </button>
               )}
-
               {isPaid ? (
                 <button onClick={handleDownload} disabled={isDownloading} className="btn-download">
                   <Download size={14} />
@@ -148,27 +145,6 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus, pa
               <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--text-muted)' }}>
                 Showing sample resume —{' '}
                 <span onClick={() => navigate('/')} style={{ color: 'var(--blue)', cursor: 'pointer', textDecoration: 'underline' }}>upload your own</span>
-              </span>
-            </div>
-          )}
-
-          {/* Link quality notice */}
-          {!isDemo && data.projects?.some(p => p.link) && (
-            <div style={{ background: 'var(--bg-low)', border: '1px solid var(--border-solid)', padding: '10px 16px', marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-              <span style={{ fontSize: 14, flexShrink: 0 }}>🔗</span>
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                Project links were extracted from your PDF. Use{' '}
-                <strong style={{ color: 'var(--blue)' }}>Edit mode</strong> to correct any that are wrong.
-              </span>
-            </div>
-          )}
-
-          {/* No links notice */}
-          {!isDemo && data.projects?.length > 0 && !data.projects.some(p => p.link) && (
-            <div style={{ background: 'var(--bg-low)', border: '1px solid var(--border-solid)', padding: '10px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 14 }}>⚠️</span>
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--text-muted)' }}>
-                No project links found. Add them in <strong style={{ color: 'var(--blue)' }}>Edit mode</strong> after unlocking.
               </span>
             </div>
           )}
@@ -214,6 +190,7 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus, pa
       {showPayment && (
         <PaymentModal
           resumeName={data.name}
+          portfolioSlug={resumeSlug}
           paymentEnabled={paymentEnabled}
           onClose={() => setShowPayment(false)}
           onSuccess={() => { setIsPaid(true); setShowPayment(false); setEditMode(false); }}

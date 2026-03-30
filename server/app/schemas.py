@@ -84,3 +84,4 @@ class ResumeResponse(BaseModel):
     success: bool
     data: Optional[PortfolioData] = None
     error: Optional[str] = None
+    slug: Optional[str] = None

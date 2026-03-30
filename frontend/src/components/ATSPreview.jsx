@@ -1,4 +1,4 @@
-import { E, LinkBadge, EditableChips } from './PreviewComponents';
+import { E, EditableChips } from './PreviewComponents';
 import { Plus, Trash2 } from 'lucide-react';
 
 // Leadership keywords for dynamic badge detection
@@ -38,22 +38,22 @@ export default function ATSPreview({ data, editable = false, onDataChange }) {
   const removeEdu  = i => onDataChange && onDataChange({ ...data, education: data.education.filter((_, j) => j !== i) });
 
   const s = {
-    wrap: { background: '#ffffff', padding: '40px 48px', fontFamily: "'Inter', sans-serif", color: '#111111', maxWidth: 800, margin: '0 auto', position: 'relative' },
-    name: { fontSize: 28, fontWeight: 700, color: '#000000', letterSpacing: '-0.5px', marginBottom: 4 },
-    contact: { fontSize: 12, color: '#444444', marginBottom: 4, display: 'flex', flexWrap: 'wrap', gap: '0 8px' },
-    rule: { borderTop: '2px solid #000000', margin: '16px 0' },
-    thinRule: { borderTop: '1px solid #cccccc', margin: '12px 0' },
-    sectionTitle: { fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#000000', marginBottom: 10 },
-    summary: { fontSize: 13, lineHeight: 1.65, color: '#333333', marginBottom: 20 },
-    role: { fontSize: 14, fontWeight: 700, color: '#000000' },
-    company: { fontSize: 13, color: '#333333' },
-    duration: { fontSize: 12, color: '#666666' },
-    bullet: { fontSize: 13, color: '#333333', lineHeight: 1.6 },
-    chip: { display: 'inline-block', fontSize: 11, border: '1px solid #cccccc', padding: '2px 8px', marginRight: 6, marginBottom: 6, color: '#333333' },
-    projTitle: { fontSize: 13, fontWeight: 700, color: '#000000' },
-    projDesc: { fontSize: 12, color: '#444444', lineHeight: 1.6 },
-    link: { fontSize: 11, color: '#003366', textDecoration: 'none' },
-    addBtn: { display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'none', border: '1px dashed #ccc', color: '#666', fontFamily: "'Inter', sans-serif", fontSize: 11, cursor: 'pointer', borderRadius: 2, marginTop: 10 },
+    wrap: { background: '#ffffff', padding: '32px 40px', fontFamily: "'Georgia', 'Times New Roman', serif", color: '#111111', maxWidth: 794, margin: '0 auto', position: 'relative', fontSize: 11 },
+    name: { fontSize: 22, fontWeight: 700, color: '#000000', letterSpacing: '-0.3px', marginBottom: 3, fontFamily: "'Georgia', serif" },
+    contact: { fontSize: 10, color: '#444444', marginBottom: 3, display: 'flex', flexWrap: 'wrap', gap: '0 6px', fontFamily: "'Courier New', monospace" },
+    rule: { borderTop: '2px solid #000000', margin: '12px 0' },
+    thinRule: { borderTop: '1px solid #cccccc', margin: '10px 0' },
+    sectionTitle: { fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#000000', marginBottom: 8, fontFamily: "'Georgia', serif" },
+    summary: { fontSize: 10.5, lineHeight: 1.6, color: '#333333', marginBottom: 16, fontFamily: "'Georgia', serif" },
+    role: { fontSize: 11, fontWeight: 700, color: '#000000', fontFamily: "'Georgia', serif" },
+    company: { fontSize: 10.5, color: '#333333', fontFamily: "'Georgia', serif" },
+    duration: { fontSize: 10, color: '#666666', fontFamily: "'Courier New', monospace" },
+    bullet: { fontSize: 10.5, color: '#333333', lineHeight: 1.55, fontFamily: "'Georgia', serif" },
+    chip: { display: 'inline-block', fontSize: 9.5, border: '1px solid #cccccc', padding: '1px 6px', marginRight: 5, marginBottom: 5, color: '#333333', fontFamily: "'Courier New', monospace" },
+    projTitle: { fontSize: 11, fontWeight: 700, color: '#000000', fontFamily: "'Georgia', serif" },
+    projDesc: { fontSize: 10.5, color: '#444444', lineHeight: 1.55, fontFamily: "'Georgia', serif" },
+    link: { fontSize: 10, color: '#003366', textDecoration: 'none', fontFamily: "'Courier New', monospace" },
+    addBtn: { display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'none', border: '1px dashed #ccc', color: '#666', fontFamily: "'Georgia', serif", fontSize: 10, cursor: 'pointer', borderRadius: 2, marginTop: 10 },
   };
 
   return (
@@ -149,7 +149,6 @@ export default function ATSPreview({ data, editable = false, onDataChange }) {
                 ) : null}
                 <E style={s.projTitle} value={proj.title} onChange={v => patch(`projects.${i}.title`, v)} editable={editable} />
               </span>
-              <LinkBadge href={proj.link} onEdit={v => patch(`projects.${i}.link`, v)} editable={editable} />
             </div>
             <E tag="p" style={{ ...s.projDesc, margin: '4px 0' }} value={proj.description} onChange={v => patch(`projects.${i}.description`, v)} editable={editable} />
             <EditableChips items={proj.technologies || []} onChange={v => patch(`projects.${i}.technologies`, v)} editable={editable} chipClass="ats-chip" />

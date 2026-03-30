@@ -1,6 +1,6 @@
 import { Mail, Phone, MapPin, Plus, Trash2 } from 'lucide-react';
 import LucideIcon from './LucideIcon';
-import { E, LinkBadge, EditableChips } from './PreviewComponents';
+import { E, EditableChips } from './PreviewComponents';
 
 // Leadership keywords for dynamic badge detection
 const LEADERSHIP_KEYWORDS = ['founder', 'lead', 'manager', 'director', 'chief', 'architect'];
@@ -82,13 +82,13 @@ export default function BlueprintPreview({ data, editable = false, onDataChange 
           {(data.linkedin || editable) && (
             <div className="identity-email">
               <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--text-dim)' }}>in</span>
-              <LinkBadge href={data.linkedin} editable={editable} onEdit={v => patch('linkedin', v)} />
+              <E value={data.linkedin || ''} editable={editable} onChange={v => patch('linkedin', v || null)} placeholder="LinkedIn URL" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--text-dim)' }} />
             </div>
           )}
           {(data.github || editable) && (
             <div className="identity-email">
               <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--text-dim)' }}>gh</span>
-              <LinkBadge href={data.github} editable={editable} onEdit={v => patch('github', v)} />
+              <E value={data.github || ''} editable={editable} onChange={v => patch('github', v || null)} placeholder="GitHub URL" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--text-dim)' }} />
             </div>
           )}
         </div>
@@ -227,7 +227,6 @@ export default function BlueprintPreview({ data, editable = false, onDataChange 
                   ) : (
                     <span className="proj-id">PROJ_{String(i + 1).padStart(3, '0')}</span>
                   )}
-                  <LinkBadge href={proj.link} editable={editable} onEdit={v => patch(`projects.${i}.link`, v)} />
                 </div>
                 <E value={proj.title} editable={editable} onChange={v => patch(`projects.${i}.title`, v)}
                   style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--blue-dark)', marginBottom: 10, display: 'block' }} />

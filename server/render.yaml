@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: relak-api
+    runtime: python
+    rootDir: server
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ENV
+        value: production
+      - key: GEMINI_API_KEY
+        sync: false          # set in Render dashboard
+      - key: NEON_URL
+        sync: false          # set in Render dashboard
+      - key: ADMIN_SECRET_KEY
+        sync: false          # set in Render dashboard
+      - key: ALLOWED_ORIGINS
+        sync: false          # set to your Netlify URL
+      - key: PAYMENT_ENABLED
+        value: "false"       # flip to "true" when Razorpay is live
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_SECRET
+        sync: false
+      - key: MAX_CONCURRENT_JOBS
+        value: "1"
+      - key: WORKERS
+        value: "1"

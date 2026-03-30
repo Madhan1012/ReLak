@@ -1,4 +1,4 @@
-import { E, LinkBadge } from './PreviewComponents';
+import { E } from './PreviewComponents';
 import { Plus, Trash2 } from 'lucide-react';
 
 // Leadership keywords for dynamic badge detection
@@ -273,7 +273,6 @@ export default function ClassicPreview({ data, editable = false, onDataChange })
                     ) : null}
                     <E value={proj.title} onChange={v => patch(`projects.${i}.title`, v)} editable={editable} />
                   </span>
-                  <LinkBadge href={proj.link} onEdit={v => patch(`projects.${i}.link`, v)} editable={editable} />
                 </div>
                 <E tag="p" style={{
                   fontFamily: "'Georgia', serif",
