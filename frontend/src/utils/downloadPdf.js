@@ -11,9 +11,8 @@ export async function downloadBlueprintPdf(elementId, _legacy, styleName = 'styl
   const element = document.getElementById(elementId);
   if (!element) { console.error('Preview element not found:', elementId); return; }
 
-  const cleanName  = (userName  || 'user').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-  const cleanStyle = (styleName || 'style').toLowerCase().replace(/\s+/g, '-');
-  const filename   = `${cleanName}_ReLak_${cleanStyle}.pdf`;
+  const cleanName = (userName || 'user').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const filename  = `${cleanName}_ReLak_Architect.pdf`;
 
   const canvas = await html2canvas(element, {
     scale: 2,
@@ -39,11 +38,16 @@ export async function downloadBlueprintPdf(elementId, _legacy, styleName = 'styl
     const sliceH = Math.min(pageHeightPx, canvas.height - yOffset);
     const slice  = document.createElement('canvas');
     slice.width  = canvas.width;
-    slice.height = sliceH;
-    slice.getContext('2d').drawImage(canvas, 0, yOffset, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+    // Page 2: add 40px top margin by shifting content down
+    const topMarginPx = pageNum > 0 ? Math.round(40 * (canvas.width / 210)) : 0;
+    slice.height = sliceH + topMarginPx;
+    const ctx = slice.getContext('2d');
+    if (topMarginPx > 0) ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, slice.width, slice.height);
+    ctx.drawImage(canvas, 0, yOffset, canvas.width, sliceH, 0, topMarginPx, canvas.width, sliceH);
 
     const imgData = slice.toDataURL('image/jpeg', 0.92);
-    pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, sliceH * (pdfW / canvas.width));
+    pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, slice.height * (pdfW / canvas.width));
 
     yOffset += pageHeightPx;
     pageNum++;

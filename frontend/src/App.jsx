@@ -85,6 +85,8 @@ export default function App() {
         <Route path="/privacy" element={<ContentPage pageKey="privacy" serverStatus={serverStatus} />} />
         <Route path="/support" element={<ContentPage pageKey="support" serverStatus={serverStatus} />} />
         <Route path="/about"   element={<ContentPage pageKey="about"   serverStatus={serverStatus} />} />
+        <Route path="/terms"   element={<ContentPage pageKey="privacy" serverStatus={serverStatus} />} />
+        <Route path="/refund"  element={<ContentPage pageKey="refund"  serverStatus={serverStatus} />} />
         <Route path="/home/admins-login" element={<AdminLogin />} />
         {ADMIN_PATH !== '/home/admins-login' && <Route path={ADMIN_PATH} element={<AdminLogin />} />}
       </Routes>
@@ -153,7 +155,7 @@ function HeroPage({ serverStatus, onResult }) {
                   <span className={`status-dot ${serverStatus}`} />
                   <span className="status-label">{statusLabel}</span>
                 </div>
-                <h1 className="hero-h1">Refactor Your Resume into an Architectural Masterpiece.</h1>
+                <h1 className="hero-h1">ReLak</h1>
                 <p className="hero-sub">
                   Turn your PDF into a polished resume in 60 seconds.
                   Optimized with AI power-verbs.{' '}
@@ -221,7 +223,9 @@ function PageFooter() {
       </div>
       <div className="footer-links">
         <span onClick={() => navigate('/privacy')} className="footer-link" style={{ cursor: 'pointer' }}>Privacy Policy</span>
-        <span onClick={() => navigate('/support')} className="footer-link" style={{ cursor: 'pointer' }}>Terms of Service</span>
+        <span onClick={() => navigate('/terms')}   className="footer-link" style={{ cursor: 'pointer' }}>Terms of Service</span>
+        <span onClick={() => navigate('/refund')}  className="footer-link" style={{ cursor: 'pointer' }}>Refund Policy</span>
+        <span onClick={() => navigate('/support')} className="footer-link" style={{ cursor: 'pointer' }}>Support</span>
         <span onClick={() => navigate('/about')}   className="footer-link" style={{ cursor: 'pointer' }}>About</span>
       </div>
     </footer>

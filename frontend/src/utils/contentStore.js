@@ -116,10 +116,10 @@ You may only upload resumes that you own or have the right to process. You may n
 
 ### Payment Terms
 
-- The ₹20 charge is a **one-time fee per resume generation**, not per style
+- The ₹21 charge is a **one-time fee per resume generation**, not per style
 - All 3 resume styles (ATS, Blueprint, Classic) are included in a single payment
 - Switching between styles after payment is free and unlimited
-- Re-uploading a new or updated resume requires a new ₹20 payment
+- Re-uploading a new or updated resume requires a new ₹21 payment
 - **Refunds:** Due to the digital and immediate nature of the service, refunds are not available once the resume has been generated and the download has been made available. If you experience a technical failure that prevents download, contact us within 24 hours.
 
 ### Disclaimer
@@ -152,7 +152,7 @@ After generation, unlock your resume and use **Edit mode** to correct any field 
 Refresh the page and try again. If the issue persists, email us with your transaction ID from Razorpay.
 
 **Can I regenerate for free?**
-No — each generation costs ₹20. Switching between the 3 styles is free within the same generation.
+No — each generation costs ₹21. Switching between the 3 styles is free within the same generation.
 
 **How long is my data kept?**
 Unpaid resume data is automatically deleted within 2 hours of upload. Paid data is retained until you request deletion. Your original PDF is deleted immediately after parsing.
@@ -175,11 +175,11 @@ ReLak is an AI-driven resume refactor tool. Upload your existing PDF resume and 
 2. **AI Engine** runs a two-pass extraction: first pulling raw facts, then rewriting bullets with power-verbs while self-checking for hallucinations
 3. **Choose a style** — ATS Friendly, Blueprint Aesthetic, or Classic Serif
 4. **Edit** any field inline before downloading (after unlocking)
-5. **Pay ₹20** to unlock all styles and download your PDF
+5. **Pay ₹21** to unlock all styles and download your PDF
 
-## Why ₹20?
+## Why ₹21?
 
-We believe professional resume help shouldn't cost thousands. ₹20 covers our AI API costs and keeps the service running. One payment unlocks all 3 styles for that resume.
+We believe professional resume help shouldn't cost thousands. ₹21 covers our AI API costs and keeps the service running. One payment unlocks all 3 styles for that resume.
 
 ## Data Privacy
 
@@ -188,6 +188,36 @@ Your uploaded file is deleted immediately after parsing. Unpaid resume data is a
 ## Built with
 
 Gemini 2.5 Flash · FastAPI · React 19 · Neon PostgreSQL · Razorpay`,
+  },
+  refund: {
+    title: 'Refund Policy',
+    body: `## Refund Policy
+
+**Last updated: March 2026**
+
+---
+
+## Automatic Refunds
+
+Refunds for failed PDF generations are processed within 48 hours. If your generation fails due to a technical error, a refund is initiated automatically via the dashboard.
+
+Contact smk060506@gmail.com with your Payment ID if you do not see the refund within 48 hours.
+
+---
+
+## Data Policy
+
+User data (PDFs and PII) is automatically purged from our Neon DB 120 minutes after session creation.
+
+Paid records are retained until you request deletion. Email smk060506@gmail.com with your name to request immediate deletion.
+
+---
+
+## Non-Refundable Cases
+
+- Successful generation where you choose not to use the output
+- Requests made more than 30 days after the transaction
+- Issues caused by incorrect information you provided`,
   },
 };
 

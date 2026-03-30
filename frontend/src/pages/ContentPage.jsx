@@ -78,8 +78,10 @@ function ContentFooter() {
       </div>
       <div className="footer-links">
         <span onClick={() => navigate('/privacy')} className="footer-link" style={{ cursor: 'pointer' }}>Privacy Policy</span>
-        <span onClick={() => navigate('/support')} className="footer-link" style={{ cursor: 'pointer' }}>Terms of Service</span>
-        <span onClick={() => navigate('/about')} className="footer-link" style={{ cursor: 'pointer' }}>About</span>
+        <span onClick={() => navigate('/terms')}   className="footer-link" style={{ cursor: 'pointer' }}>Terms of Service</span>
+        <span onClick={() => navigate('/refund')}  className="footer-link" style={{ cursor: 'pointer' }}>Refund Policy</span>
+        <span onClick={() => navigate('/support')} className="footer-link" style={{ cursor: 'pointer' }}>Support</span>
+        <span onClick={() => navigate('/about')}   className="footer-link" style={{ cursor: 'pointer' }}>About</span>
       </div>
     </footer>
   );

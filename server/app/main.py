@@ -519,6 +519,7 @@ _CONTENT_DEFAULTS = {
     "privacy": {"title": "Privacy & Terms", "body": ""},
     "support": {"title": "Support", "body": ""},
     "about":   {"title": "About ReLak", "body": ""},
+    "refund":  {"title": "Refund Policy", "body": ""},
 }
 
 @app.get("/content/{key}")
