@@ -5,10 +5,17 @@ import jsPDF from 'jspdf';
  * Captures #blueprint-preview and exports a compressed PDF.
  * - JPEG 82% quality + scale 1.5 keeps output well under 2MB.
  * - For Classic style (A4-sized element) we render at exactly A4 width.
+ * - Dynamic filename: {user_name}_ReLak_{style}.pdf
+ * - Enforces max 2 pages with break-inside: avoid on cards
  */
-export async function downloadBlueprintPdf(elementId, filename = 'relak-resume.pdf') {
+export async function downloadBlueprintPdf(elementId, filename = 'relak-resume.pdf', styleName = 'style', userName = 'user') {
   const element = document.getElementById(elementId);
   if (!element) return;
+
+  // Dynamic filename: {user_name}_ReLak_{style}.pdf
+  const cleanName = (userName || 'user').toLowerCase().replace(/\s+/g, '-');
+  const cleanStyle = (styleName || 'style').toLowerCase().replace(/\s+/g, '-');
+  const finalFilename = `${cleanName}_ReLak_${cleanStyle}.pdf`;
 
   const canvas = await html2canvas(element, {
     scale: 1.5,
@@ -44,14 +51,17 @@ export async function downloadBlueprintPdf(elementId, filename = 'relak-resume.p
     const slice  = document.createElement('canvas');
     slice.width  = canvas.width;
     slice.height = sliceH;
-    slice.getContext('2d').drawImage(canvas, 0, -yOffset);
+    slice.getContext('2d').drawImage(canvas, 0, yOffset, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
 
     const imgData = slice.toDataURL('image/jpeg', 0.82);
     pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, sliceH * (pdfW / canvas.width));
 
     yOffset += pageHeightPx;
     pageNum++;
+    
+    // Max 2 pages enforcement
+    if (pageNum >= 2) break;
   }
 
-  pdf.save(filename);
+  pdf.save(finalFilename);
 }

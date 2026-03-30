@@ -9,10 +9,12 @@ import AdminLogin from './pages/AdminLogin';
 import ContentPage from './pages/ContentPage';
 import { Rocket, PenLine, AlertTriangle } from 'lucide-react';
 import { API_BASE } from './config';
+import { sanitizeResumeData } from './utils/sanitize';
 
 export default function App() {
-  const [resumeData, setResumeData]     = useState(null);
-  const [serverStatus, setServerStatus] = useState('checking');
+  const [resumeData, setResumeData]         = useState(null);
+  const [serverStatus, setServerStatus]     = useState('checking');
+  const [paymentEnabled, setPaymentEnabled] = useState(true); // default true until fetched
 
   useEffect(() => {
     const handler = (e) => {
@@ -29,7 +31,14 @@ export default function App() {
     const ping = async () => {
       try {
         const res = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(5000) });
-        if (res.ok) { setServerStatus('online'); return; }
+        if (res.ok) {
+          setServerStatus('online');
+          // Fetch config once server is up
+          fetch(`${API_BASE}/config`).then(r => r.ok ? r.json() : null).then(cfg => {
+            if (cfg) setPaymentEnabled(cfg.payment_enabled ?? true);
+          }).catch(() => {});
+          return;
+        }
       } catch { /* cold start */ }
       attempts++;
       if (attempts < 6) { setServerStatus('warming'); setTimeout(ping, 5000); }
@@ -41,7 +50,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/"       element={<HeroPage serverStatus={serverStatus} onResult={setResumeData} />} />
-      <Route path="/result" element={<ResultPage resumeData={resumeData} setResumeData={setResumeData} serverStatus={serverStatus} />} />
+      <Route path="/result" element={<ResultPage resumeData={resumeData} setResumeData={setResumeData} serverStatus={serverStatus} paymentEnabled={paymentEnabled} />} />
       <Route path="/build"  element={<BuildPage onResult={setResumeData} serverStatus={serverStatus} />} />
       <Route path="/privacy" element={<ContentPage pageKey="privacy" serverStatus={serverStatus} />} />
       <Route path="/support" element={<ContentPage pageKey="support" serverStatus={serverStatus} />} />
@@ -55,6 +64,7 @@ export default function App() {
 function HeroPage({ serverStatus, onResult }) {
   const navigate = useNavigate();
   const [pendingFile, setPendingFile] = useState(null);
+  const [jobDescription, setJobDescription] = useState('');
   const [isLoading, setIsLoading]     = useState(false);
   const [error, setError]             = useState(null);
 
@@ -63,6 +73,9 @@ function HeroPage({ serverStatus, onResult }) {
     setIsLoading(true); setError(null);
     const fd = new FormData();
     fd.append('file', file);
+    if (jobDescription) {
+      fd.append('job_description', jobDescription);
+    }
 
     // Exponential backoff retry — 3 attempts: 0ms, 1s, 3s
     const delays = [0, 1000, 3000];
@@ -74,7 +87,7 @@ function HeroPage({ serverStatus, onResult }) {
         const res  = await fetch(`${API_BASE}/upload`, { method: 'POST', body: fd });
         const json = await res.json();
         if (!res.ok || !json.success) throw new Error(json.error || json.detail || 'Upload failed');
-        onResult(json.data);
+        onResult(sanitizeResumeData(json.data));
         navigate('/result');
         setIsLoading(false);
         return;
@@ -108,7 +121,7 @@ function HeroPage({ serverStatus, onResult }) {
                   <span className={`status-dot ${serverStatus}`} />
                   <span className="status-label">{statusLabel}</span>
                 </div>
-                <h1 className="hero-h1">ReLak: Zero-Touch<br />Portfolios.</h1>
+                <h1 className="hero-h1">Refactor Your Resume into an Architectural Masterpiece.</h1>
                 <p className="hero-sub">
                   Turn your PDF into a polished resume in 60 seconds.
                   Optimized with AI power-verbs.{' '}
@@ -144,7 +157,11 @@ function HeroPage({ serverStatus, onResult }) {
             </div>
 
             <div>
-              <UploadZone onFileSelect={setPendingFile} isLoading={isLoading} />
+              <UploadZone 
+                onFileSelect={setPendingFile} 
+                onJobDescriptionChange={setJobDescription}
+                isLoading={isLoading} 
+              />
               {error && (
                 <div className="error-bar">
                   <AlertTriangle size={16} color="var(--red)" />
@@ -171,8 +188,8 @@ function PageFooter() {
         <span className="footer-copy">Built with ReLak © 2026</span>
       </div>
       <div className="footer-links">
-        <span onClick={() => navigate('/privacy')} className="footer-link" style={{ cursor: 'pointer' }}>Privacy & Terms</span>
-        <span onClick={() => navigate('/support')} className="footer-link" style={{ cursor: 'pointer' }}>Support</span>
+        <span onClick={() => navigate('/privacy')} className="footer-link" style={{ cursor: 'pointer' }}>Privacy Policy</span>
+        <span onClick={() => navigate('/support')} className="footer-link" style={{ cursor: 'pointer' }}>Terms of Service</span>
         <span onClick={() => navigate('/about')}   className="footer-link" style={{ cursor: 'pointer' }}>About</span>
       </div>
     </footer>

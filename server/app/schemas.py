@@ -80,13 +80,7 @@ class PortfolioData(BaseModel):
         description="1: ATS Friendly, 2: Blueprint Aesthetic, 3: Classic Resume"
     )
 
-# Graceful failure wrapper — kept as alias for backward compatibility
-ResumeRepsonse = None  # replaced below
-
 class ResumeResponse(BaseModel):
     success: bool
     data: Optional[PortfolioData] = None
     error: Optional[str] = None
-
-# Backward-compat alias (old typo — remove after full migration)
-ResumeRepsonse = ResumeResponse

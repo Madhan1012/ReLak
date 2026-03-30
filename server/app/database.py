@@ -5,10 +5,13 @@ from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 
-SQLALCHEMY = os.getenv("NEON_URL")
+DATABASE_URL = os.getenv("NEON_URL")
+
+if not DATABASE_URL:
+    raise RuntimeError("NEON_URL env var is required")
 
 engine = create_engine(
-    SQLALCHEMY,
+    DATABASE_URL,
     pool_pre_ping = True
 )
 

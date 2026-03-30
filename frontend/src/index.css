@@ -285,7 +285,7 @@ body {
 .exp-active { display: flex; align-items: center; gap: 6px; }
 .exp-active-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
 .exp-active-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--green); text-transform: uppercase; letter-spacing: 0.1em; }
-.exp-card { padding: 24px; box-shadow: 0 2px 8px var(--shadow); }
+.exp-card { padding: 24px; box-shadow: 0 2px 8px var(--shadow); page-break-inside: avoid; }
 .exp-card.primary  { background: var(--bg-card); }
 .exp-card.secondary { background: var(--bg-low); }
 .exp-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
@@ -299,8 +299,9 @@ body {
 .exp-highlight-text { font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-muted); line-height: 1.6; }
 
 .proj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-.proj-card { background: var(--bg-low); padding: 24px; }
+.proj-card { background: var(--bg-low); padding: 24px; page-break-inside: avoid; }
 .proj-id { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--blue); text-transform: uppercase; letter-spacing: 0.15em; display: block; margin-bottom: 8px; }
+.proj-leadership { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--gold); background: 'rgba(201,168,76,0.12)'; border: '1px solid var(--gold)'; padding: '2px 8px'; letter-spacing: '0.15em'; text-transform: 'uppercase'; display: 'block'; margin-bottom: 8px; }
 .proj-title { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: var(--blue-dark); margin-bottom: 10px; }
 [data-theme="dark"] .proj-title { color: var(--text); }
 .proj-desc { font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px; }
@@ -324,7 +325,7 @@ body {
 .footer-logo { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); }
 .footer-copy { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); }
 .footer-links { display: flex; gap: 24px; }
-.footer-link { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); text-decoration: none; transition: color 0.2s; }
+.footer-link { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); text-decoration: none; transition: color 0.2s; cursor: pointer; }
 .footer-link:hover { color: var(--text-muted); }
 
 /* ─── Content pages (Privacy, Support, About) ────────────── */

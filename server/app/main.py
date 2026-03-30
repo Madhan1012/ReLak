@@ -1,42 +1,75 @@
 import os
+import re
 import shutil
+import hashlib
 import asyncio
 import datetime
 import logging
+import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Header, Request, Response, Body
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Header, Request, Response, Body, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from sqlalchemy.orm import Session
+from sqlalchemy import text as sqlalchemy_text
 
 from .database import engine, get_db
 from .engine import parse_resume_to_json
-from .schemas import ResumeResponse, ResumeRepsonse
+from .schemas import ResumeResponse, PortfolioData
 from .models import Base, Portfolio, User, SiteContent
 from .security import sanitise_pdf, mask_pii, CSP_POLICY
 
 # ── Logging ───────────────────────────────────────────────────────────────────
+
+class _PIIFilter(logging.Filter):
+    """Strip emails and phone numbers from all log records before they hit stdout."""
+    _EMAIL = re.compile(r'[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}')
+    _PHONE = re.compile(r'\+?\d[\d\s\-]{8,}\d')
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        msg = str(record.getMessage())
+        msg = self._EMAIL.sub('[MASKED]', msg)
+        msg = self._PHONE.sub('[MASKED]', msg)
+        record.msg  = msg
+        record.args = ()
+        return True
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 log = logging.getLogger("relak")
+log.addFilter(_PIIFilter())
+# Also attach to root so third-party loggers are covered
+logging.getLogger().addFilter(_PIIFilter())
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+def calculate_file_hash(file_path: str) -> str:
+    """SHA256 hash for deduplication."""
+    sha256 = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        while chunk := f.read(8192):
+            sha256.update(chunk)
+    return sha256.hexdigest()
 
 # ── Config (all from env — never hardcoded) ───────────────────────────────────
-ADMIN_SECRET_KEY = os.getenv("ADMIN_SECRET_KEY")
-ALLOWED_ORIGINS  = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")]
-MAX_CONCURRENT   = int(os.getenv("MAX_CONCURRENT_JOBS", "3"))
-IS_PROD          = os.getenv("ENV", "dev") == "production"
+ADMIN_SECRET_KEY  = os.getenv("ADMIN_SECRET_KEY")
+ALLOWED_ORIGINS   = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")]
+MAX_CONCURRENT    = int(os.getenv("MAX_CONCURRENT_JOBS", "3"))
+IS_PROD           = os.getenv("ENV", "dev") == "production"
+PAYMENT_ENABLED   = os.getenv("PAYMENT_ENABLED", "true").lower() == "true"
+RAZORPAY_KEY_ID   = os.getenv("RAZORPAY_KEY_ID", "")
+RAZORPAY_SECRET   = os.getenv("RAZORPAY_SECRET", "")
 
 if not ADMIN_SECRET_KEY:
     raise RuntimeError("ADMIN_SECRET_KEY env var is required")
 
-UPLOAD_DIR = Path("temp_uploads")
+UPLOAD_DIR = Path(__file__).parent.parent / "temp_uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 # ── Semaphore (request queue) — created inside lifespan ──────────────────────
@@ -47,12 +80,41 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 # ── Lifespan ──────────────────────────────────────────────────────────────────
+def _run_migrations():
+    """
+    Lightweight schema migrations — adds columns that may be missing from
+    an existing database created before the current models were defined.
+    Safe to run on every startup (all statements are idempotent).
+    """
+    migrations = [
+        # Added in v1.1 — deduplication hash
+        """
+        ALTER TABLE portfolios
+        ADD COLUMN IF NOT EXISTS file_hash VARCHAR;
+        """,
+        # Index for fast hash lookups (CREATE INDEX IF NOT EXISTS is idempotent)
+        """
+        CREATE INDEX IF NOT EXISTS ix_portfolios_file_hash
+        ON portfolios (file_hash);
+        """,
+    ]
+    with engine.connect() as conn:
+        for sql in migrations:
+            try:
+                conn.execute(sqlalchemy_text(sql))
+            except Exception as e:
+                log.warning(f"Migration skipped ({e})")
+        conn.commit()
+    log.info("Schema migrations applied.")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _sem
     _sem = asyncio.Semaphore(MAX_CONCURRENT)
     log.info(f"DB sync... (max concurrent AI jobs: {MAX_CONCURRENT})")
     Base.metadata.create_all(bind=engine)
+    _run_migrations()
     yield
     # Clean up any leftover temp files on shutdown
     for f in UPLOAD_DIR.glob("*"):
@@ -117,9 +179,67 @@ async def health_check():
     return {"status": "online", "message": "Engine is warmed-up"}
 
 
+@app.get("/config")
+async def get_config():
+    """Public config endpoint — lets frontend know if real payments are enabled."""
+    return {"payment_enabled": PAYMENT_ENABLED}
+
+
+@app.post("/payment/verify")
+async def verify_payment(payload: dict = Body(...), db: Session = Depends(get_db)):
+    """
+    Verify a Razorpay payment signature and mark the portfolio as paid.
+    In demo mode (PAYMENT_ENABLED=false) this always succeeds.
+    """
+    portfolio_id = payload.get("portfolio_id")
+    if not portfolio_id:
+        raise HTTPException(status_code=422, detail="portfolio_id is required")
+
+    # ── Demo mode bypass ──────────────────────────────────────────────────────
+    if not PAYMENT_ENABLED:
+        row = db.query(Portfolio).filter(Portfolio.slug == portfolio_id).first()
+        if row:
+            row.is_paid = True
+            db.commit()
+        return {"success": True, "demo": True}
+
+    # ── Real Razorpay signature verification ──────────────────────────────────
+    order_id   = payload.get("razorpay_order_id", "")
+    payment_id = payload.get("razorpay_payment_id", "")
+    signature  = payload.get("razorpay_signature", "")
+
+    if not all([order_id, payment_id, signature]):
+        raise HTTPException(status_code=422, detail="Missing Razorpay fields")
+
+    import hmac, hashlib as _hl
+    expected = hmac.new(
+        RAZORPAY_SECRET.encode(),
+        f"{order_id}|{payment_id}".encode(),
+        _hl.sha256,
+    ).hexdigest()
+
+    if not secrets.compare_digest(expected, signature):
+        log.warning("Payment signature mismatch — possible tampering")
+        raise HTTPException(status_code=400, detail="Invalid payment signature")
+
+    # Signature valid — mark paid
+    row = db.query(Portfolio).filter(Portfolio.slug == portfolio_id).first()
+    if row:
+        row.is_paid = True
+        db.commit()
+        log.info(f"Portfolio {portfolio_id[:8]}... marked paid via Razorpay")
+
+    return {"success": True}
+
+
 @app.post("/upload", response_model=ResumeResponse)
 @limiter.limit("5/minute")
-async def upload_resume(request: Request, file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_resume(
+    request: Request, 
+    file: UploadFile = File(...), 
+    job_description: str = Form(None),
+    db: Session = Depends(get_db)
+):
     # ── Size check ────────────────────────────────────────────────────────────
     if file.size and file.size > 2 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="File too large (max 2MB)")
@@ -148,28 +268,72 @@ async def upload_resume(request: Request, file: UploadFile = File(...), db: Sess
             log.warning(f"Rejected unsafe file: {safe_name} — {reason}")
             raise HTTPException(status_code=422, detail=f"File rejected: {reason}")
 
+        # ── File Hashing (Deduplication) ──────────────────────────────────────
+        # We include job_description in the hash to allow different versions for different JDs
+        hasher = hashlib.sha256()
+        with open(temp_path, "rb") as f:
+            while chunk := f.read(8192):
+                hasher.update(chunk)
+        if job_description:
+            hasher.update(job_description.encode())
+        file_hash = hasher.hexdigest()
+        
+        existing_portfolio = db.query(Portfolio).filter(Portfolio.file_hash == file_hash).first()
+
+        if existing_portfolio:
+            log.info(f"Deduplication hit: {safe_name} (hash: {file_hash[:8]}...)")
+            # Return existing data to prevent duplicate AI call
+            # Include created_at for countdown timer
+            existing_data = PortfolioData(**existing_portfolio.resume_data)
+            existing_data._created_at = existing_portfolio.created_at.isoformat()
+            return ResumeResponse(
+                success=True,
+                data=existing_data
+            )
+
         log.info(f"Upload queued: {safe_name} ({file.size} bytes)")
 
         # ── Queue: wait for a free AI slot ────────────────────────────────────
         if _sem is None:
             raise RuntimeError("Server not ready — semaphore not initialised")
         async with _sem:
-            result = await asyncio.to_thread(parse_resume_to_json, str(temp_path))
+            result = await asyncio.to_thread(parse_resume_to_json, str(temp_path), job_description)
 
         # ── Log with PII masked ───────────────────────────────────────────────
         if result.success and result.data:
             masked_name = mask_pii(result.data.name)
             log.info(f"Parsed successfully for: {masked_name}")
 
-            slug = result.data.name.lower().replace(" ", "-")
-            existing = db.query(Portfolio).filter(Portfolio.slug == slug).first()
+            # Check if this exact file (with same hash) already exists
+            existing = db.query(Portfolio).filter(Portfolio.file_hash == file_hash).first()
             if existing:
                 existing.resume_data = result.data.model_dump()
                 existing.created_at  = datetime.datetime.utcnow()
                 db.commit()
-            else:
-                db.add(Portfolio(slug=slug, resume_data=result.data.model_dump(), is_paid=False))
-                db.commit()
+                # Return the result with the existing slug
+                # Include created_at for countdown timer
+                result.data._created_at = existing.created_at.isoformat()
+                return result
+
+            # New portfolio: create a unique, unguessable slug
+            base_slug = result.data.name.lower().replace(" ", "-")
+            # Remove non-alphanumeric from slug
+            base_slug = "".join(c for c in base_slug if c.isalnum() or c == "-")
+            random_suffix = secrets.token_hex(3) # 6 chars
+            unique_slug = f"{base_slug}-{random_suffix}"
+
+            db.add(Portfolio(
+                slug=unique_slug,
+                resume_data=result.data.model_dump(),
+                file_hash=file_hash,
+                is_paid=False
+            ))
+            db.commit()
+
+            # Reload the portfolio to get created_at
+            new_portfolio = db.query(Portfolio).filter(Portfolio.slug == unique_slug).first()
+            if new_portfolio:
+                result.data._created_at = new_portfolio.created_at.isoformat()
 
             # Auto-trim: if total records >= 40, delete 20 oldest unpaid
             total = db.query(Portfolio).count()

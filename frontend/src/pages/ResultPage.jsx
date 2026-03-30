@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download, Lock, ArrowLeft, Pencil, Eye } from 'lucide-react';
+import { Download, Lock, ArrowLeft, Pencil, Eye, Timer } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import StyleSelector from '../components/StyleSelector';
 import BlueprintPreview from '../components/BlueprintPreview';
@@ -10,23 +10,74 @@ import PaymentModal from '../components/PaymentModal';
 import { downloadBlueprintPdf } from '../utils/downloadPdf';
 import { SAMPLE_DATA } from '../utils/sampleData';
 
-export default function ResultPage({ resumeData, setResumeData, serverStatus }) {
+// ── Countdown: shows time until data self-destructs (created_at + 2h) ────────
+function CountdownTimer({ createdAt }) {
+  const [remaining, setRemaining] = useState(null);
+
+  useEffect(() => {
+    if (!createdAt) return;
+    const expiry = new Date(createdAt).getTime() + 2 * 60 * 60 * 1000;
+
+    const tick = () => {
+      const diff = expiry - Date.now();
+      setRemaining(diff > 0 ? diff : 0);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [createdAt]);
+
+  if (remaining === null) return null;
+
+  const totalSec = Math.floor(remaining / 1000);
+  const mm = String(Math.floor(totalSec / 60)).padStart(2, '0');
+  const ss = String(totalSec % 60).padStart(2, '0');
+  const urgent = remaining < 10 * 60 * 1000;
+
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      padding: '4px 10px',
+      background: urgent ? 'rgba(186,26,26,0.08)' : 'var(--bg-low)',
+      border: `1px solid ${urgent ? 'var(--red)' : 'var(--border-solid)'}`,
+      borderRadius: 2,
+    }}>
+      <Timer size={11} color={urgent ? 'var(--red)' : 'var(--text-dim)'} />
+      <span style={{
+        fontFamily: "'JetBrains Mono',monospace", fontSize: 10,
+        color: urgent ? 'var(--red)' : 'var(--text-dim)',
+        letterSpacing: '0.05em',
+      }}>
+        Data self-destructs in: {mm}:{ss}
+      </span>
+    </div>
+  );
+}
+
+export default function ResultPage({ resumeData, setResumeData, serverStatus, paymentEnabled = true }) {
   const navigate = useNavigate();
-  const [styleId, setStyleId]         = useState(2);
-  const [isPaid, setIsPaid]           = useState(false);
-  const [showPayment, setShowPayment] = useState(false);
+  const [styleId, setStyleId]             = useState(2);
+  const [isPaid, setIsPaid]               = useState(false);
+  const [showPayment, setShowPayment]     = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [editMode, setEditMode]       = useState(false);
+  const [editMode, setEditMode]           = useState(false);
 
   const data   = resumeData || SAMPLE_DATA;
   const isDemo = !resumeData;
+
+  // In demo mode (PAYMENT_ENABLED=false) unlock immediately
+  useEffect(() => {
+    if (!paymentEnabled) setIsPaid(true);
+  }, [paymentEnabled]);
 
   const handleDownload = async () => {
     if (!isPaid) { setShowPayment(true); return; }
     setIsDownloading(true);
     try {
       const slug = (data.name || 'resume').toLowerCase().replace(/\s+/g, '-');
-      await downloadBlueprintPdf('blueprint-preview', `relak-${slug}.pdf`);
+      const styleNames = ['ats', 'blueprint', 'classic'];
+      const styleName = styleNames[styleId - 1] || 'style';
+      await downloadBlueprintPdf('blueprint-preview', `relak-${slug}.pdf`, styleName, data.name);
     } finally {
       setIsDownloading(false);
     }
@@ -44,8 +95,8 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus }) 
         <section style={{ padding: '40px 24px 80px', maxWidth: 1280, margin: '0 auto' }}>
 
           {/* Top bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, flexWrap: 'wrap', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <button onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid var(--border-solid)', padding: '7px 14px', cursor: 'pointer', fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--text-muted)', borderRadius: 2 }}>
                 <ArrowLeft size={13} /> Back
               </button>
@@ -55,11 +106,20 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus }) 
                   {isDemo ? 'Sample Preview' : 'AI Generated Blueprint'}
                 </span>
               </div>
+              {/* Countdown — only for real (non-demo) unpaid data */}
+              {!isDemo && !isPaid && data._created_at && (
+                <CountdownTimer createdAt={data._created_at} />
+              )}
+              {/* Demo mode badge */}
+              {!paymentEnabled && (
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'var(--gold)', background: 'rgba(201,168,76,0.12)', border: '1px solid var(--gold)', padding: '2px 8px', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                  DEMO MODE
+                </span>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              {/* Edit toggle — only for blueprint style */}
-              {styleId === 2 && isPaid && (
+              {isPaid && (
                 <button
                   onClick={() => setEditMode(e => !e)}
                   style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: editMode ? 'var(--bg-mid)' : 'none', border: '1px solid var(--border-solid)', cursor: 'pointer', fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--text-muted)', borderRadius: 2 }}
@@ -92,14 +152,13 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus }) 
             </div>
           )}
 
-          {/* Link quality notice — shown when real data has projects */}
+          {/* Link quality notice */}
           {!isDemo && data.projects?.some(p => p.link) && (
             <div style={{ background: 'var(--bg-low)', border: '1px solid var(--border-solid)', padding: '10px 16px', marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <span style={{ fontSize: 14, flexShrink: 0 }}>🔗</span>
               <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                Project links were extracted from your PDF. If any are incorrect or missing, use{' '}
-                <strong style={{ color: 'var(--blue)' }}>Edit mode</strong> (after unlocking) to correct them directly in the preview.
-                Google Drive and non-GitHub links are automatically removed.
+                Project links were extracted from your PDF. Use{' '}
+                <strong style={{ color: 'var(--blue)' }}>Edit mode</strong> to correct any that are wrong.
               </span>
             </div>
           )}
@@ -109,13 +168,11 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus }) 
             <div style={{ background: 'var(--bg-low)', border: '1px solid var(--border-solid)', padding: '10px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 14 }}>⚠️</span>
               <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--text-muted)' }}>
-                No project links were found in your PDF. Add them in{' '}
-                <strong style={{ color: 'var(--blue)' }}>Edit mode</strong> after unlocking.
+                No project links found. Add them in <strong style={{ color: 'var(--blue)' }}>Edit mode</strong> after unlocking.
               </span>
             </div>
           )}
 
-          {/* Edit mode hint */}
           {editMode && (
             <div style={{ background: 'var(--bg-low)', border: '1px dashed var(--blue)', padding: '10px 16px', marginBottom: 16, fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--blue)' }}>
               ✏ Edit mode — click any text to edit. Changes apply to the downloaded PDF.
@@ -127,9 +184,9 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus }) 
           {/* Preview with blur gate */}
           <div style={{ position: 'relative' }}>
             <div className={styleId === 2 ? 'drafting-table' : 'plain-table'} style={{ filter: isPaid ? 'none' : 'blur(7px)', userSelect: isPaid ? 'auto' : 'none', pointerEvents: isPaid ? 'auto' : 'none', transition: 'filter 0.4s ease' }}>
-              {styleId === 1 && <ATSPreview data={data} />}
+              {styleId === 1 && <ATSPreview data={data} editable={editMode} onDataChange={handleDataChange} />}
               {styleId === 2 && <BlueprintPreview data={data} editable={editMode} onDataChange={handleDataChange} />}
-              {styleId === 3 && <ClassicPreview data={data} />}
+              {styleId === 3 && <ClassicPreview data={data} editable={editMode} onDataChange={handleDataChange} />}
             </div>
 
             {!isPaid && (
@@ -157,6 +214,7 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus }) 
       {showPayment && (
         <PaymentModal
           resumeName={data.name}
+          paymentEnabled={paymentEnabled}
           onClose={() => setShowPayment(false)}
           onSuccess={() => { setIsPaid(true); setShowPayment(false); setEditMode(false); }}
         />
@@ -174,8 +232,8 @@ function PageFooter() {
         <span className="footer-copy">Built with ReLak © 2026</span>
       </div>
       <div className="footer-links">
-        <span onClick={() => navigate('/privacy')} className="footer-link" style={{ cursor: 'pointer' }}>Privacy & Terms</span>
-        <span onClick={() => navigate('/support')} className="footer-link" style={{ cursor: 'pointer' }}>Support</span>
+        <span onClick={() => navigate('/privacy')} className="footer-link" style={{ cursor: 'pointer' }}>Privacy Policy</span>
+        <span onClick={() => navigate('/support')} className="footer-link" style={{ cursor: 'pointer' }}>Terms of Service</span>
         <span onClick={() => navigate('/about')} className="footer-link" style={{ cursor: 'pointer' }}>About</span>
       </div>
     </footer>

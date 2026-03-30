@@ -89,15 +89,31 @@ function AdminDashboard({ adminKey, onLogout }) {
   const [users, setUsers]           = useState([]);
   const [loadingData, setLoadingData] = useState(false);
 
-  // ── 30-minute session timeout ─────────────────────────────────────────────
-  const SESSION_MS = 30 * 60 * 1000;
+  // ── 30-minute inactivity timeout ──────────────────────────────────────────
   useEffect(() => {
-    const timer = setTimeout(() => {
-      alert('Admin session expired after 30 minutes of inactivity.');
-      onLogout();
-    }, SESSION_MS);
-    return () => clearTimeout(timer);
-  }, []);
+    const SESSION_MS = 30 * 60 * 1000;
+    let timer;
+
+    const resetTimer = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        alert('Admin session expired after 30 minutes of inactivity.');
+        onLogout();
+      }, SESSION_MS);
+    };
+
+    // Initial timer
+    resetTimer();
+
+    // Reset on any user activity
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    events.forEach(name => document.addEventListener(name, resetTimer));
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      events.forEach(name => document.removeEventListener(name, resetTimer));
+    };
+  }, [onLogout]);
 
   const apiFetch = (path, opts = {}) =>
     fetch(`${API_BASE}${path}`, { ...opts, headers: { 'X-Admin-Key': adminKey, ...(opts.headers || {}) } });
@@ -123,7 +139,7 @@ function AdminDashboard({ adminKey, onLogout }) {
   useEffect(() => {
     if (tab === 'portfolios') refreshPortfolios();
     if (tab === 'users') refreshUsers();
-  }, [tab]);
+  }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const TABS = [
     { id: 'overview',   label: 'Overview',    icon: <BarChart2 size={13} /> },

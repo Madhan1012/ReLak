@@ -6,7 +6,8 @@ export const SAMPLE_DATA = {
   photo_url: null,
   summary:
     'Full-Stack Engineer with 4+ years building scalable distributed systems and AI-powered products. Proven track record of reducing latency by 40% and shipping production features across fintech and SaaS domains. Passionate about clean architecture and developer experience.',
-  skills: ['Python', 'TypeScript', 'React', 'FastAPI', 'PostgreSQL', 'Redis', 'Docker', 'AWS', 'System Design'],
+  technical_skills: ['Python', 'TypeScript', 'React', 'FastAPI', 'PostgreSQL', 'Redis', 'Docker', 'AWS', 'System Design'],
+  soft_skills: ['Team Leadership', 'Problem Solving', 'Communication'],
   experience: [
     {
       company: 'TechNova Systems',
@@ -36,12 +37,14 @@ export const SAMPLE_DATA = {
       description:
         'Open-source natural language to SQL translator using fine-tuned LLaMA-3. Supports 12 SQL dialects and achieves 91% accuracy on the Spider benchmark. Used by 200+ developers.',
       technologies: ['Python', 'LLaMA-3', 'FastAPI', 'PostgreSQL', 'Docker'],
+      link: null,
     },
     {
       title: 'VaultLedger — Fintech Reconciliation',
       description:
         'Automated bank reconciliation system processing ₹50Cr+ in daily transactions. Reduced manual reconciliation effort by 80% using ML-based anomaly detection.',
       technologies: ['Python', 'Pandas', 'Scikit-learn', 'React', 'AWS Lambda'],
+      link: null,
     },
   ],
   education: [

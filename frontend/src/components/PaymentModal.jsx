@@ -2,11 +2,20 @@ import { useState } from 'react';
 import { X, CreditCard, CheckCircle, Lock } from 'lucide-react';
 
 // Demo Razorpay — no real money, simulates the flow
-export default function PaymentModal({ onClose, onSuccess, resumeName }) {
+export default function PaymentModal({ onClose, onSuccess, resumeName, paymentEnabled = true }) {
   const [step, setStep] = useState('confirm'); // confirm | processing | success
 
   const handlePay = () => {
     setStep('processing');
+
+    // In demo mode (PAYMENT_ENABLED=false), skip the delay and go straight to success
+    if (!paymentEnabled) {
+      setTimeout(() => {
+        setStep('success');
+        setTimeout(() => onSuccess(), 800);
+      }, 500);
+      return;
+    }
 
     // Simulate Razorpay test flow — 2s delay then success
     setTimeout(() => {

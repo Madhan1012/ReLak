@@ -4,8 +4,9 @@ import base64
 import pymupdf4llm
 import pymupdf
 from google import genai
+from google.genai import types
 from dotenv import load_dotenv
-from .schemas import PortfolioData, ResumeResponse, ResumeRepsonse
+from .schemas import PortfolioData, ResumeResponse
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 
@@ -37,7 +38,7 @@ CRITICAL OCR / TRANSCRIPTION CORRECTION RULES — apply before extracting:
   Do NOT infer or calculate end dates.
 
 ARTIFACT CLEANUP RULES:
-- Remove raw CSV/JSON artifacts from text (e.g. \\n, \\r, \\"Bachelor\\'s...\\" strings).
+- Remove raw CSV/JSON artifacts from text (e.g. \n, \r, \"Bachelor\'s...\" strings).
 - Remove markdown table syntax (|, ---) from extracted text.
 - Clean up any garbled Unicode or encoding artifacts.
 - Consolidate duplicate skill sections — do not list the same skill twice.
@@ -59,6 +60,12 @@ project name or keywords to the URL path. Examples:
 ═══════════════════════════════════════════════════════
 PASS 2 — IMPROVE + VERIFY (rewrite, then self-check)
 ═══════════════════════════════════════════════════════
+If a JOB DESCRIPTION is provided:
+- TAILOR the summary to highlight skills matching the JD.
+- TAILOR experience bullets to emphasize relevant accomplishments.
+- Re-order technical skills to put JD-required skills first.
+- Ensure the tone matches the industry in the JD.
+
 1. SUMMARY: 3-4 sentences, facts only. Self-check every claim against the source.
 2. EXPERIENCE BULLETS: Action Verb + Task + Result. Cap 4 per role. No invented metrics.
 3. PROJECT DESCRIPTIONS: 2-3 sentences max. Source text only. No fabrication.
@@ -75,6 +82,12 @@ CONTACT RULE: phone and address copied verbatim or null.
 EMAIL RULE: Copy the email EXACTLY as it appears — never alter it.
 
 OUTPUT: Return the structured JSON matching the schema exactly.
+"""
+
+RECOVERY_PROMPT = """
+The previous attempt to generate a structured resume JSON failed or was incomplete.
+Please fix the JSON below. Ensure it strictly follows the schema and all fields are populated correctly.
+Do not add any preamble or post-amble. Just the valid JSON.
 """
 
 
@@ -164,7 +177,7 @@ def _post_process_links(data: PortfolioData, links: list[str]) -> PortfolioData:
     return data
 
 
-def parse_resume_to_json(file_path: str) -> ResumeResponse:
+def parse_resume_to_json(file_path: str, job_description: str = None) -> ResumeResponse:
     try:
         client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
@@ -175,6 +188,15 @@ def parse_resume_to_json(file_path: str) -> ResumeResponse:
         md_txt = pymupdf4llm.to_markdown(file_path)
         has_text = bool(md_txt.strip()) and "intentionally omitted" not in md_txt
 
+        jd_block = ""
+        if job_description:
+            jd_block = (
+                "\n\n═══════════════════════════════════════════════════════\n"
+                "JOB DESCRIPTION (tailor the output to match this)\n"
+                "═══════════════════════════════════════════════════════\n"
+                f"{job_description}\n"
+            )
+
         if has_text:
             prompt_parts = [
                 f"{SYSTEM_PROMPT}\n\n"
@@ -183,6 +205,7 @@ def parse_resume_to_json(file_path: str) -> ResumeResponse:
                 "═══════════════════════════════════════════════════════\n"
                 f"{md_txt}"
                 f"{links_block}"
+                f"{jd_block}"
             ]
         else:
             # Vision fallback for image-only / scanned PDFs
@@ -198,20 +221,43 @@ def parse_resume_to_json(file_path: str) -> ResumeResponse:
                 "RESUME CONTENT: provided as page image(s) below.\n"
                 "Read every visible element carefully. Apply OCR corrections as instructed.\n"
                 f"{links_block}\n"
+                f"{jd_block}"
                 "═══════════════════════════════════════════════════════\n"
             ]
             prompt_parts.extend(page_images)
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt_parts,
-            config={
-                "response_mime_type": "application/json",
-                "response_schema": PortfolioData,
-            },
-        )
-
-        parsed = response.parsed
+        # ── First Attempt ─────────────────────────────────────────────────────
+        try:
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt_parts,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=PortfolioData,
+                ),
+            )
+            parsed = response.parsed
+        except Exception as e:
+            # ── JSON Recovery ─────────────────────────────────────────────────
+            # If the structured output failed, we try a more loose generation and then fix it
+            raw_response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt_parts + ["\nReturn the data as a raw JSON string."],
+            )
+            recovery_parts = [
+                RECOVERY_PROMPT,
+                f"Schema: {PortfolioData.model_json_schema()}",
+                f"Invalid JSON: {raw_response.text}"
+            ]
+            recovered_response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=recovery_parts,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=PortfolioData,
+                ),
+            )
+            parsed = recovered_response.parsed
 
         # Fallback: match any unassigned project links by keyword
         parsed = _post_process_links(parsed, pdf_links)

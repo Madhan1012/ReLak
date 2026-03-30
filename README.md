@@ -33,9 +33,9 @@
 
 ## Overview
 
-ReLak is a zero-touch resume refactor tool. Users upload a PDF or DOCX resume, the AI engine extracts and improves the content using a two-pass anti-hallucination prompt, and the result is rendered in one of three professional styles. A ₹20 one-time payment unlocks all styles, inline editing, and unlimited PDF downloads.
+ReLak is a zero-touch resume refactor tool. Users upload a PDF or DOCX resume, optionally provide a job description, and the AI engine extracts, improves, and verifies the content using a two-pass anti-hallucination prompt with JSON recovery. The result is rendered in one of three professional styles, tailored to the job description if provided. A ₹20 one-time payment unlocks all styles, inline editing, and unlimited PDF downloads.
 
-The service is designed for minimal data retention: uploaded files are deleted within seconds, and unpaid resume data is automatically purged from the database every 2 hours.
+The service is designed for minimal data retention: uploaded files are deleted within seconds, and unpaid resume data is automatically purged from the database every 2 hours. Unique, unguessable slugs are generated for each portfolio to enhance security.
 
 ---
 
@@ -49,10 +49,10 @@ Browser (React 19 + Vite)
 FastAPI (Python 3.12)
     ├── slowapi rate limiter (5 req/min/IP on /upload)
     ├── asyncio.Semaphore queue (max 3 concurrent AI calls)
-    ├── PDF sanitiser (malicious content scan)
+    ├── PDF sanitiser (malicious content scan + metadata scrubbing)
     ├── pymupdf4llm → Markdown extraction
     │       └── Vision fallback (pymupdf → base64 PNG) for scanned PDFs
-    ├── Google Gemini 2.5 Flash (structured JSON output)
+    ├── Google Gemini 2.5 Flash (structured JSON output + recovery)
     └── Neon PostgreSQL (SQLAlchemy ORM)
             └── APScheduler auto-cleanup every 2 hours
 ```
@@ -106,10 +106,10 @@ ReLak/
 └── server/
     └── app/
         ├── .env                        # Secrets — never committed
-        ├── main.py                     # FastAPI app — all routes, security middleware
-        ├── engine.py                   # Gemini two-pass extraction + vision fallback
-        ├── schemas.py                  # Pydantic v2 models
-        ├── models.py                   # SQLAlchemy ORM (User, Portfolio)
+        ├── main.py                     # FastAPI app — all routes, security middleware, unique slug generation
+├── engine.py                   # Gemini two-pass extraction + vision fallback + JD tailoring + JSON recovery
+├── schemas.py                  # Pydantic v2 models
+├── models.py                   # SQLAlchemy ORM (User, Portfolio, Payment)
         ├── database.py                 # Neon connection + session factory
         └── security.py                 # PII masking, PDF sanitisation, CSP policy
 ```
@@ -183,6 +183,7 @@ All endpoints return JSON. Admin endpoints return **404** (not 401) on missing/i
 ```
 Content-Type: multipart/form-data
 file: <PDF or DOCX, max 2MB>
+job_description: <Optional: Text of job description for tailoring>
 ```
 
 #### `POST /upload` — Response
@@ -303,8 +304,18 @@ Uses `HashRouter` — no server-side routing config needed.
 **Pass 1 — Extract only**
 Read the resume. Pull raw facts verbatim. No inference, no invention. Apply OCR corrections (`FASTAPE → FastAPI`, `2925 → 2025`, etc.). Copy email and dates exactly as written.
 
-**Pass 2 — Improve + self-check**
+**Pass 2 — Improve + self-check + JD Tailoring**
+If a `job_description` is provided:
+- TAILOR the summary to highlight skills matching the JD.
+- TAILOR experience bullets to emphasize relevant accomplishments.
+- Re-order technical skills to put JD-required skills first.
+- Ensure the tone matches the industry in the JD.
+
 Rewrite bullets as `Action Verb + Task + Result`. Before finalising each field: *"Did the resume actually say this? If not, revert."* Deduplicate skills. Clean artifact strings (`\n`, `\r`, CSV fragments).
+
+### JSON Recovery
+
+If the initial structured JSON output from Gemini is malformed or incomplete, a second attempt is made. The raw output is fed back to Gemini with a specific recovery prompt and the Pydantic schema, instructing it to fix the JSON structure. This significantly reduces "hallucinations" and ensures valid data.
 
 ### Vision Fallback
 
@@ -336,7 +347,7 @@ PDF hyperlink annotations are extracted directly from the PDF's link table (not 
 | Request queue | asyncio.Semaphore — max 3 concurrent AI calls |
 | CORS | Explicit origin whitelist from `ALLOWED_ORIGINS` env var. No wildcard. |
 | Admin auth | `X-Admin-Key` header. Returns **404** (not 401) on failure — hides endpoint existence |
-| PDF sanitisation | Scans first 512KB for `/JavaScript`, `/Launch`, `/EmbeddedFile`, `/OpenAction`, `eval(`, `<script` |
+| PDF sanitisation | Scans first 512KB for `/JavaScript`, `/Launch`, `/EmbeddedFile`, `/OpenAction`, `eval(`, `<script`. **Metadata scrubbing** (removes author, producer, etc.) |
 | Filename sanitisation | Path traversal stripped, non-alphanumeric chars removed |
 | PII masking | Emails and phone numbers masked in all log output |
 | Security headers | `X-Content-Type-Options`, `X-Frame-Options: DENY`, `X-XSS-Protection`, `Referrer-Policy` |
@@ -344,6 +355,7 @@ PDF hyperlink annotations are extracted directly from the PDF's link table (not 
 | Secrets | All from env vars. `ADMIN_SECRET_KEY` is required — server refuses to start without it |
 | Docs | `/docs` hidden in production. `/redoc` always hidden |
 | DB queries | SQLAlchemy ORM only — no raw SQL, no injection surface |
+| Unique Slugs | Randomly generated hex suffix to prevent guessing/overwriting |
 
 ### Frontend
 
@@ -446,10 +458,20 @@ created_at  TIMESTAMP DEFAULT now()
 -- portfolios
 id          UUID PRIMARY KEY DEFAULT gen_random_uuid()
 user_id     UUID REFERENCES users(id)
-slug        TEXT UNIQUE NOT NULL        -- e.g. "madhan-kumar"
+slug        TEXT UNIQUE NOT NULL        -- e.g. "madhan-kumar-a1b2c3"
 resume_data JSONB NOT NULL              -- full PortfolioData as JSON
+file_hash   TEXT UNIQUE                 -- SHA256 hash of file + JD for deduplication
 is_paid     BOOLEAN DEFAULT false
 created_at  TIMESTAMP DEFAULT now()
+
+-- payments
+id           UUID PRIMARY KEY DEFAULT gen_random_uuid()
+portfolio_id UUID REFERENCES portfolios(id)
+order_id     TEXT UNIQUE                -- Razorpay order_id
+payment_id   TEXT UNIQUE                -- Razorpay payment_id
+status       TEXT DEFAULT 'pending'     -- pending | paid | failed
+amount       TEXT DEFAULT '2000'        -- in paise (₹20)
+created_at   TIMESTAMP DEFAULT now()
 ```
 
 All queries use SQLAlchemy ORM — no raw SQL anywhere in the codebase.
@@ -484,7 +506,7 @@ All queries use SQLAlchemy ORM — no raw SQL anywhere in the codebase.
 - [x] CORS restricted to explicit origin whitelist (no wildcard)
 - [x] Rate limiting on `/upload` (5/min/IP via slowapi)
 - [x] Request queue prevents Gemini API overload (asyncio.Semaphore)
-- [x] PDF sanitisation — malicious content scan before AI processing
+- [x] PDF sanitisation — malicious content scan + metadata scrubbing
 - [x] Filename sanitisation — path traversal prevention
 - [x] PII masking in all server logs
 - [x] Security headers on all responses (X-Frame-Options, X-Content-Type-Options, etc.)
@@ -500,6 +522,9 @@ All queries use SQLAlchemy ORM — no raw SQL anywhere in the codebase.
 - [x] PDF < 2MB (JPEG compression + scale 1.5)
 - [x] Vision fallback for scanned/image-only PDFs
 - [x] `.env` in `.gitignore`
+- [x] Unique, unguessable slugs for portfolios
+- [x] File hashing for deduplication (including JD for tailored versions)
+- [x] JSON recovery for AI output
 
 ### ⚠️ Before Going Live
 
@@ -512,18 +537,19 @@ All queries use SQLAlchemy ORM — no raw SQL anywhere in the codebase.
 | Neon DB credentials | Exposed in `.env` | Rotate the Neon credentials shown in this repo's history. Generate new ones from the Neon dashboard. |
 | Gemini API key | Exposed in `.env` | Rotate the Gemini API key from Google AI Studio. |
 | `ENV=production` | Not set | Set `ENV=production` on your deployment platform to enable HSTS, CSP, and hide `/docs` |
+| `MAX_CONCURRENT_JOBS` | Default 3 | Adjust based on expected load and Gemini API quotas. |
 
 ### 🔴 Not Blocking But Should Fix Soon
 
 | Item | Notes |
 |------|-------|
 | Razorpay webhook verification | Payment unlock is currently client-side (`isPaid` state). A determined user could bypass it in the browser console. The fix: create a `/payment/verify` endpoint, verify the Razorpay signature server-side, then return a signed token that the frontend uses to unlock. |
-| Admin session expiry | Admin key is valid for the entire browser session. Add a 30-minute timeout. |
-| ATS + Classic styles not editable | Only Blueprint has inline editing. Extend to all 3 styles. |
-| Content pages in localStorage | Admin edits to Privacy/Support/About only persist on that browser. Move to a DB-backed `/content` endpoint. |
+| Admin session expiry | Fixed |
+| ATS + Classic styles not editable | Fixed |
+| Content pages in localStorage | Fixed |
 | No email on payment | Add a Razorpay webhook → send download confirmation email. |
-| `ResumeRepsonse` typo | Should be `ResumeResponse`. Fixing requires updating all references. |
-| No retry on failed upload | Add exponential backoff in `App.jsx` for transient failures. |
+| `ResumeRepsonse` typo | Fixed |
+| No retry on failed upload | Fixed |
 
 ---
 

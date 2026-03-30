@@ -1,15 +1,22 @@
 import { useRef, useState } from 'react';
-import { UploadCloud, FileText } from 'lucide-react';
+import { UploadCloud, FileText, Briefcase } from 'lucide-react';
 
-export default function UploadZone({ onFileSelect, isLoading }) {
+export default function UploadZone({ onFileSelect, onJobDescriptionChange, isLoading }) {
   const inputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [jd, setJd] = useState('');
 
   const handleFile = (file) => {
     if (!file) return;
     setSelectedFile(file);
     onFileSelect(file);
+  };
+
+  const handleJdChange = (e) => {
+    const val = e.target.value;
+    setJd(val);
+    onJobDescriptionChange?.(val);
   };
 
   const onDrop = (e) => {
@@ -19,7 +26,7 @@ export default function UploadZone({ onFileSelect, isLoading }) {
   };
 
   return (
-    <div className="upload-wrapper">
+    <div className="upload-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Architectural corner marks */}
       <div className="corner-mark corner-tl" />
       <div className="corner-mark corner-tr" />
@@ -69,6 +76,59 @@ export default function UploadZone({ onFileSelect, isLoading }) {
           </div>
         </div>
       </div>
+
+      {!isLoading && (
+        <div className="jd-container" style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border)',
+          padding: '16px',
+          borderRadius: '4px',
+          position: 'relative'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            marginBottom: 10,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            color: 'var(--blue)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em'
+          }}>
+            <Briefcase size={12} />
+            <span>[ Optional ] Tailor to Job Description</span>
+          </div>
+          <textarea
+            placeholder="Paste the job description here to optimize your resume for this specific role..."
+            value={jd}
+            onChange={handleJdChange}
+            style={{
+              width: '100%',
+              minHeight: '100px',
+              background: 'var(--input-bg)',
+              border: '1px solid var(--border-solid)',
+              borderRadius: '2px',
+              padding: '10px',
+              color: 'var(--text)',
+              fontSize: '13px',
+              fontFamily: "'Inter', sans-serif",
+              resize: 'vertical',
+              outline: 'none',
+              boxSizing: 'border-box'
+            }}
+          />
+          <p style={{
+            marginTop: 8,
+            fontSize: 10,
+            color: 'var(--text-dim)',
+            fontFamily: "'Inter', sans-serif",
+            lineHeight: 1.4
+          }}>
+            Our AI will prioritize skills and highlight experiences that match the requirements of this JD.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

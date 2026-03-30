@@ -59,9 +59,9 @@ _DANGEROUS_PATTERNS = [
 
 def sanitise_pdf(file_path: str) -> tuple[bool, str]:
     """
-    Scan a PDF for dangerous embedded content.
+    Scan a PDF for dangerous embedded content and scrub metadata.
     Returns (is_safe, reason).
-    Does NOT modify the file — just validates.
+    MODIFIES the file in-place to remove metadata if safe.
     """
     try:
         # Read raw bytes for pattern scan
@@ -76,12 +76,24 @@ def sanitise_pdf(file_path: str) -> tuple[bool, str]:
         # Verify it's a valid PDF that pymupdf can open
         doc = pymupdf.open(file_path)
         page_count = doc.page_count
-        doc.close()
 
         if page_count == 0:
+            doc.close()
             return False, "PDF has no pages"
         if page_count > 10:
+            doc.close()
             return False, f"PDF too long ({page_count} pages, max 10)"
+
+        # ── Metadata Scrubbing ────────────────────────────────────────────────
+        # Create a new document without metadata/sensitive info
+        doc.set_metadata({})
+        # Save to a memory buffer first, then overwrite the original file
+        # (Direct save to same path requires incremental=True, which we don't want)
+        buffer = doc.tobytes(garbage=3, deflate=True)
+        doc.close()
+
+        with open(file_path, "wb") as f:
+            f.write(buffer)
 
         return True, "ok"
 

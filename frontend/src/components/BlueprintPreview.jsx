@@ -1,66 +1,14 @@
 import { Mail, Phone, MapPin, Plus, Trash2 } from 'lucide-react';
 import LucideIcon from './LucideIcon';
+import { E, LinkBadge, EditableChips } from './PreviewComponents';
 
-/** Visible [LINK] badge — prints in PDF. Editable input in edit mode. */
-function LinkBadge({ href, onEdit, editable }) {
-  if (!href && !editable) return null;
-  const short = (href || '').replace('https://', '').replace('http://', '').replace('www.', '');
-  if (editable) {
-    return (
-      <input
-        defaultValue={href || ''}
-        onBlur={e => onEdit && onEdit(e.target.value || null)}
-        placeholder="https://github.com/..."
-        style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--blue)', background: 'var(--bg-low)', border: '1px solid var(--border-solid)', padding: '1px 6px', borderRadius: 2, width: 220, outline: 'none' }}
-      />
-    );
-  }
-  if (!href) return null;
-  return (
-    <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--blue)', background: 'var(--bg-low)', padding: '1px 7px', border: '1px solid var(--border-solid)', borderRadius: 2, wordBreak: 'break-all' }}>
-      [LINK] {short}
-    </span>
-  );
-}
+// Leadership keywords for dynamic badge detection
+const LEADERSHIP_KEYWORDS = ['founder', 'lead', 'manager', 'director', 'chief', 'architect'];
 
-/** Inline contentEditable span/block. Falls back to plain render when not editable. */
-function E({ value, onChange, editable, style, tag: Tag = 'span', placeholder = '…' }) {
-  if (!editable) return <Tag style={style}>{value}</Tag>;
-  return (
-    <Tag
-      contentEditable suppressContentEditableWarning
-      onBlur={e => onChange && onChange(e.currentTarget.textContent)}
-      style={{ ...style, outline: 'none', borderBottom: '1px dashed var(--border-solid)', minWidth: 40, cursor: 'text' }}
-      title="Click to edit"
-    >
-      {value || placeholder}
-    </Tag>
-  );
-}
-
-/** Editable comma-separated chip list */
-function EditableChips({ items, onChange, editable }) {
-  if (!editable) {
-    return (
-      <div className="skills-wrap">
-        {items.map((s, i) => <span key={i} className="skill-chip">{s}</span>)}
-      </div>
-    );
-  }
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {items.map((s, i) => (
-        <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <input value={s} onChange={e => { const n = [...items]; n[i] = e.target.value; onChange(n); }}
-            style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, padding: '3px 8px', border: '1px solid var(--border-solid)', background: 'var(--bg-low)', color: 'var(--text)', borderRadius: 2, flex: 1, outline: 'none', textTransform: 'uppercase', letterSpacing: '0.05em' }} />
-          <button onClick={() => onChange(items.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)', padding: 2 }}><Trash2 size={12} /></button>
-        </div>
-      ))}
-      <button onClick={() => onChange([...items, ''])} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: '1px dashed var(--border-solid)', padding: '4px 10px', cursor: 'pointer', fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--blue)', borderRadius: 2, width: 'fit-content' }}>
-        <Plus size={11} /> Add
-      </button>
-    </div>
-  );
+function isLeadershipRole(roleOrTitle) {
+  if (!roleOrTitle || typeof roleOrTitle !== 'string') return false;
+  const lower = roleOrTitle.toLowerCase();
+  return LEADERSHIP_KEYWORDS.some(kw => lower.includes(kw));
 }
 
 function SectionHeader({ index, title }) {
@@ -229,7 +177,7 @@ export default function BlueprintPreview({ data, editable = false, onDataChange 
                       <E value={exp.company} editable={editable} onChange={v => patch(`experience.${i}.company`, v)}
                         style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: 'var(--blue)', display: 'block' }} />
                     </div>
-                    <span className="exp-ref">[ REF: EX-{String(i + 1).padStart(3, '0')} ]</span>
+                    <span className="exp-ref">{isLeadershipRole(exp.role) ? '[ LEADERSHIP ]' : `[ REF: EX-${String(i + 1).padStart(3, '0')} ]`}</span>
                   </div>
                   <ul className="exp-highlights">
                     {(exp.highlights || []).map((h, j) => (
@@ -272,7 +220,13 @@ export default function BlueprintPreview({ data, editable = false, onDataChange 
                   <button onClick={() => removeProj(i)} style={{ position: 'absolute', top: 8, right: 8, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)' }}><Trash2 size={13} /></button>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
-                  <span className="proj-id">PROJ_{String(i + 1).padStart(3, '0')}</span>
+                  {isLeadershipRole(proj.title) ? (
+                    <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'var(--gold)', background: 'rgba(201,168,76,0.12)', border: '1px solid var(--gold)', padding: '2px 8px', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                      LEADERSHIP
+                    </span>
+                  ) : (
+                    <span className="proj-id">PROJ_{String(i + 1).padStart(3, '0')}</span>
+                  )}
                   <LinkBadge href={proj.link} editable={editable} onEdit={v => patch(`projects.${i}.link`, v)} />
                 </div>
                 <E value={proj.title} editable={editable} onChange={v => patch(`projects.${i}.title`, v)}
