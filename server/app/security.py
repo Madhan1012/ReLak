@@ -105,11 +105,11 @@ def sanitise_pdf(file_path: str) -> tuple[bool, str]:
 
 CSP_POLICY = (
     "default-src 'self'; "
-    "script-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+    "script-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://checkout.razorpay.com https://cdn.razorpay.com; "
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; "
     "font-src 'self' https://fonts.gstatic.com data:; "
     "img-src 'self' data: blob:; "
-    "connect-src 'self' https://api.razorpay.com; "
-    "frame-src 'none'; "
+    "connect-src 'self' http://localhost:8000 https://*.onrender.com https://*.railway.app https://*.vercel.app https://*.render.com https://api.razorpay.com; "
+    "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com; "
     "object-src 'none';"
 )
