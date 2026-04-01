@@ -50,9 +50,6 @@ _DANGEROUS_PATTERNS = [
     b"/JavaScript",
     b"/JS ",
     b"/Launch",
-    b"/EmbeddedFile",
-    b"/AA ",          # Additional Actions
-    b"/OpenAction",
     b"eval(",
     b"<script",
 ]

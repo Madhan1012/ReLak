@@ -1,4 +1,6 @@
 temp_uploads/
+demo_docs/
+notes.txt
 .env
 **/.env
 __pycache__/
