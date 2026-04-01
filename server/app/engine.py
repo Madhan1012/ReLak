@@ -66,7 +66,7 @@ If a JOB DESCRIPTION is provided:
 - Re-order technical skills to put JD-required skills first.
 - Ensure the tone matches the industry in the JD.
 
-1. SUMMARY: 3-4 sentences, facts only. Self-check every claim against the source.
+1. SUMMARY: 3-4 sentences, facts only. Write in first-person implicit style (no pronouns — drop "I" and "My", never use "He/She/They/Possesses/Demonstrates"). Self-check every claim against the source.
 2. EXPERIENCE BULLETS: Action Verb + Task + Result. Cap 4 per role. No invented metrics.
 3. PROJECT DESCRIPTIONS: 2-3 sentences max. Source text only. No fabrication.
 4. TECHNICAL SKILLS: Hard skills only (languages, frameworks, tools, DBs, platforms).
