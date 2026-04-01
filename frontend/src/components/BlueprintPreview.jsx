@@ -1,5 +1,4 @@
 import { Mail, Phone, MapPin, Plus, Trash2 } from 'lucide-react';
-import LucideIcon from './LucideIcon';
 import { E, EditableChips } from './PreviewComponents';
 
 // Leadership keywords for dynamic badge detection
@@ -93,49 +92,6 @@ export default function BlueprintPreview({ data, editable = false, onDataChange 
           )}
         </div>
       </header>
-
-      {/* ── Tech Stack icons ── */}
-      {(data.tech_stack_icons?.length > 0 || editable) && (
-        <section style={{ marginBottom: 40 }}>
-          <SectionHeader index={idx++} title="Technical_Engine" />
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-            {(data.tech_stack_icons || []).map((icon, i) => (
-              <div key={i} style={{ background: 'var(--bg-mid)', padding: '10px 14px', borderLeft: '2px solid var(--blue-dark)', display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
-                <LucideIcon name={icon} size={20} color="var(--blue)" />
-                {editable && (
-                  <>
-                    <input
-                      defaultValue={icon}
-                      onBlur={e => {
-                        const icons = [...(data.tech_stack_icons || [])];
-                        icons[i] = e.target.value.trim() || icon;
-                        patch('tech_stack_icons', icons);
-                      }}
-                      style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--blue)', background: 'transparent', border: 'none', borderBottom: '1px dashed var(--border-solid)', outline: 'none', width: 80 }}
-                      aria-label={`Edit icon ${i + 1}`}
-                    />
-                    <button
-                      onClick={() => patch('tech_stack_icons', (data.tech_stack_icons || []).filter((_, j) => j !== i))}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)', padding: 0 }}
-                      aria-label={`Remove icon ${icon}`}
-                    ><Trash2 size={11} /></button>
-                  </>
-                )}
-                {!editable && <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--text-dim)', textTransform: 'capitalize' }}>{icon.replace(/-/g, ' ')}</span>}
-              </div>
-            ))}
-            {editable && (
-              <button
-                onClick={() => patch('tech_stack_icons', [...(data.tech_stack_icons || []), 'code-2'])}
-                style={{ background: 'none', border: '1px dashed var(--border-solid)', padding: '10px 14px', cursor: 'pointer', fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: 'var(--blue)', display: 'flex', alignItems: 'center', gap: 4 }}
-                aria-label="Add tech icon"
-              >
-                <Plus size={11} /> Add icon
-              </button>
-            )}
-          </div>
-        </section>
-      )}
 
       {/* ── Technical Skills ── */}
       {(techSkills.length > 0 || editable) && (

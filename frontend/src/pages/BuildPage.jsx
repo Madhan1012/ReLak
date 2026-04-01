@@ -110,10 +110,12 @@ export default function BuildPage({ onResult, serverStatus }) {
       experience: experience.map(e => ({ ...e, highlights: e.highlights.filter(Boolean) })),
       projects: projects.map(p => ({ ...p, technologies: p.technologies.filter(Boolean), link: p.link || null })),
       education,
-      tech_stack_icons: ['code-2', 'database', 'server', 'git-branch', 'layers'],
+      tech_stack_icons: [],
       style_id: 2,
     };
-    onResult(data);
+    // Generate a local slug for scratch-built resumes (no server round-trip needed)
+    const slug = `scratch-${personal.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}-${Date.now()}`;
+    onResult(data, slug);
     navigate('/result');
   };
 

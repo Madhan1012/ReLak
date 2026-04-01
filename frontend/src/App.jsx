@@ -81,7 +81,7 @@ export default function App() {
       <Routes>
         <Route path="/"       element={<HeroPage serverStatus={serverStatus} onResult={(data, slug) => { setResumeData(data); setResumeSlug(slug); }} />} />
         <Route path="/result" element={<ResultPage resumeData={resumeData} setResumeData={setResumeData} serverStatus={serverStatus} paymentEnabled={paymentEnabled} resumeSlug={resumeSlug} isAdmin={isAdmin} />} />
-        <Route path="/build"  element={<BuildPage onResult={setResumeData} serverStatus={serverStatus} />} />
+        <Route path="/build"  element={<BuildPage onResult={(data, slug) => { setResumeData(data); setResumeSlug(slug); }} serverStatus={serverStatus} />} />
         <Route path="/privacy" element={<ContentPage pageKey="privacy" serverStatus={serverStatus} />} />
         <Route path="/support" element={<ContentPage pageKey="support" serverStatus={serverStatus} />} />
         <Route path="/about"   element={<ContentPage pageKey="about"   serverStatus={serverStatus} />} />
