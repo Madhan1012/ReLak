@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, ArrowLeft, ArrowRight } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import { API_BASE } from '../config';
 
 const mono = "'JetBrains Mono', monospace";
 const sans = "'Space Grotesk', sans-serif";
@@ -85,7 +86,7 @@ export default function BuildPage({ onResult, serverStatus }) {
   const [softSkills, setSoftSkills] = useState(['']);
   const [experience, setExperience] = useState([{ company: '', role: '', duration: '', highlights: [''] }]);
   const [projects, setProjects] = useState([{ title: '', description: '', technologies: [''], link: '' }]);
-  const [education, setEducation] = useState([{ institution: '', degree: '', year: '' }]);
+  const [education, setEducation] = useState([{ institution: '', degree: '', year: '', gpa: '' }]);
 
   const STEPS = ['Personal', 'Skills', 'Experience', 'Projects', 'Education'];
 
@@ -101,20 +102,24 @@ export default function BuildPage({ onResult, serverStatus }) {
   const eduUpdate  = (i, k, v) => setEducation(a => a.map((x, j) => j === i ? { ...x, [k]: v } : x));
 
   // ── Build final data object ───────────────────────────────────────────────
-  const handleFinish = () => {
+  const handleFinish = async () => {
     const data = {
       ...personal,
-      photo_url: null,
       technical_skills: techSkills.filter(Boolean),
       soft_skills: softSkills.filter(Boolean),
       experience: experience.map(e => ({ ...e, highlights: e.highlights.filter(Boolean) })),
       projects: projects.map(p => ({ ...p, technologies: p.technologies.filter(Boolean), link: p.link || null })),
-      education,
-      tech_stack_icons: [],
-      style_id: 2,
+      education: education.map(e => ({ ...e, gpa: e.gpa || null })),
     };
-    // Generate a local slug for scratch-built resumes (no server round-trip needed)
+    // Generate a local slug and register it in the DB so payment/verify works
     const slug = `scratch-${personal.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}-${Date.now()}`;
+    try {
+      await fetch(`${API_BASE}/session/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, resume_data: data }),
+      });
+    } catch { /* non-critical — payment will still work in demo mode */ }
     onResult(data, slug);
     navigate('/result');
   };
@@ -246,9 +251,10 @@ export default function BuildPage({ onResult, serverStatus }) {
                   <Field label="Degree *" value={edu.degree} onChange={v => eduUpdate(i, 'degree', v)} placeholder="B.Tech Computer Science" />
                   <Field label="Institution *" value={edu.institution} onChange={v => eduUpdate(i, 'institution', v)} placeholder="IIT Madras" />
                   <Field label="Year" value={edu.year} onChange={v => eduUpdate(i, 'year', v)} placeholder="2016 — 2020" />
+                  <Field label="CGPA / Percentage" value={edu.gpa} onChange={v => eduUpdate(i, 'gpa', v)} placeholder="8.5 / 10 or 89%" />
                 </Card>
               ))}
-              <AddBtn onClick={() => listAdd(setEducation, { institution: '', degree: '', year: '' })} label="Add Education" />
+              <AddBtn onClick={() => listAdd(setEducation, { institution: '', degree: '', year: '', gpa: '' })} label="Add Education" />
             </>
           )}
 

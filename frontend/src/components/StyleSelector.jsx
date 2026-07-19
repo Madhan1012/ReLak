@@ -1,7 +1,8 @@
 const STYLES = [
-  { id: 1, label: 'ATS Friendly', tag: 'SAFE BUILD',     desc: 'Single-column, clean black on white. Optimised for resume parsers.' },
-  { id: 2, label: 'Blueprint',    tag: 'CURRENT BUILD',  desc: 'Architectural grid with blueprint blue accents and Lucide icons.' },
-  { id: 3, label: 'Classic',      tag: 'PROFESSIONAL',   desc: 'Two-column serif layout. Formal and authoritative.' },
+  { id: 1, label: 'ATS Friendly',   tag: 'SAFE BUILD',     desc: 'Single-column, clean black on white. Optimised for resume parsers.' },
+  { id: 2, label: 'Blueprint',      tag: 'CURRENT BUILD',  desc: 'Architectural grid with blueprint blue accents and Lucide icons.' },
+  { id: 3, label: 'Classic',        tag: 'PROFESSIONAL',   desc: 'Two-column serif layout. Formal and authoritative.' },
+  { id: 4, label: 'Professional',   tag: 'DOCX MIRROR',    desc: 'Strict single-column. Plain-text skills, techs in narrative. Maximum ATS fidelity.' },
 ];
 
 export default function StyleSelector({ selected, onChange }) {
@@ -11,7 +12,7 @@ export default function StyleSelector({ selected, onChange }) {
         <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: 'var(--text-dim)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>[ SELECT_STYLE ]</span>
         <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
         {STYLES.map(s => (
           <button
             key={s.id}

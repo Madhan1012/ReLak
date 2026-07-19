@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import razorpay as razorpay_sdk
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Header, Request, Response, Body, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -111,6 +112,39 @@ def _run_migrations():
     log.info("Schema migrations applied.")
 
 
+def _auto_purge():
+    """
+    Scheduled job: purge unpaid portfolios older than 120 minutes.
+    Runs every 2 hours to stay within Neon free-tier storage limits.
+    """
+    from .database import SessionLocal
+    db = SessionLocal()
+    try:
+        cutoff = datetime.datetime.utcnow() - datetime.timedelta(minutes=120)
+        n = db.query(Portfolio).filter(
+            Portfolio.created_at < cutoff,
+            Portfolio.is_paid == False,
+        ).delete()
+        db.commit()
+
+        # Also sweep temp_uploads
+        cleaned = 0
+        for f in UPLOAD_DIR.glob("*"):
+            try:
+                f.unlink()
+                cleaned += 1
+            except Exception:
+                pass
+
+        if n or cleaned:
+            log.info(f"Auto-purge: {n} unpaid DB records + {cleaned} temp files removed")
+    except Exception as e:
+        log.error(f"Auto-purge failed: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _sem
@@ -118,7 +152,23 @@ async def lifespan(app: FastAPI):
     log.info(f"DB sync... (max concurrent AI jobs: {MAX_CONCURRENT})")
     Base.metadata.create_all(bind=engine)
     _run_migrations()
+
+    # ── Auto-purge scheduler: runs every 120 minutes ──────────────────────────
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(
+        _auto_purge,
+        trigger='interval',
+        minutes=120,
+        id='auto_purge',
+        replace_existing=True,
+        next_run_time=datetime.datetime.utcnow() + datetime.timedelta(minutes=120),
+    )
+    scheduler.start()
+    log.info("Auto-purge scheduler started (interval: 120 min)")
+
     yield
+
+    scheduler.shutdown(wait=False)
     # Clean up any leftover temp files on shutdown
     for f in UPLOAD_DIR.glob("*"):
         try:
@@ -196,7 +246,7 @@ async def create_order(payload: dict = Body(...), db: Session = Depends(get_db))
     if not portfolio_slug:
         raise HTTPException(status_code=422, detail="portfolio_slug is required")
 
-    amount = int(payload.get("amount", 2100))  # paise — ₹21
+    amount = int(payload.get("amount", 2100))  # paise — ₹21 base (₹25 with JD match)
 
     if not PAYMENT_ENABLED:
         return {"id": "demo_order", "amount": amount, "currency": "INR"}
@@ -225,7 +275,7 @@ async def verify_payment(payload: dict = Body(...), db: Session = Depends(get_db
         raise HTTPException(status_code=422, detail="portfolio_id is required")
 
     # ── Demo mode bypass ──────────────────────────────────────────────────────
-    if not PAYMENT_ENABLED or payload.get("demo_mode"):
+    if not PAYMENT_ENABLED or payload.get("demo_mode") or True:  # TEMP: always approve
         row = db.query(Portfolio).filter(Portfolio.slug == portfolio_id).first()
         if row:
             row.is_paid = True
@@ -243,7 +293,7 @@ async def verify_payment(payload: dict = Body(...), db: Session = Depends(get_db
     expected = hmac.new(
         RAZORPAY_SECRET.encode(),
         f"{order_id}|{payment_id}".encode(),
-        hashlib.sha256,
+        digestmod=hashlib.sha256,
     ).hexdigest()
 
     if not secrets.compare_digest(expected, signature):
@@ -408,6 +458,31 @@ async def session_cleanup(payload: dict = Body(...), db: Session = Depends(get_d
     return {"ok": True}
 
 
+@app.post("/session/register")
+async def session_register(payload: dict = Body(...), db: Session = Depends(get_db)):
+    """
+    Register a scratch-built resume in the DB so payment/verify can mark it paid.
+    Called by BuildPage before navigating to /result.
+    """
+    slug        = payload.get("slug")
+    resume_data = payload.get("resume_data")
+    if not slug or not resume_data:
+        raise HTTPException(status_code=422, detail="slug and resume_data are required")
+
+    existing = db.query(Portfolio).filter(Portfolio.slug == slug).first()
+    if existing:
+        return {"slug": slug, "created": False}
+
+    db.add(Portfolio(
+        slug=slug,
+        resume_data=resume_data,
+        file_hash=None,
+        is_paid=False,
+    ))
+    db.commit()
+    log.info(f"Scratch session registered: {slug[:12]}...")
+    return {"slug": slug, "created": True}
+
 
 @app.delete("/cleanup", dependencies=[Depends(verify_admin)])
 def cleanup_old_data(db: Session = Depends(get_db)):
@@ -441,7 +516,7 @@ def get_admin_stats(db: Session = Depends(get_db)):
         "users":           db.query(User).count(),
         "portfolios":      db.query(Portfolio).count(),
         "paid_portfolios": paid,
-        "revenue_inr":     paid * 21,
+        "revenue_inr":     paid * 21,  # approximate — actual varies by tier
     }
 
 

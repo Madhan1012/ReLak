@@ -1,15 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download, Lock, ArrowLeft, Pencil, Eye, Timer } from 'lucide-react';
+import { Download, Lock, ArrowLeft, Pencil, Eye, Timer, ChevronDown } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import StyleSelector from '../components/StyleSelector';
 import BlueprintPreview from '../components/BlueprintPreview';
 import ATSPreview from '../components/ATSPreview';
 import ClassicPreview from '../components/ClassicPreview';
+import ProfessionalPreview from '../components/ProfessionalPreview';
 import PaymentModal from '../components/PaymentModal';
-import { downloadBlueprintPdf } from '../utils/downloadPdf';
+import { downloadBlueprintPdf, downloadDocx, downloadHighQualityPdf } from '../utils/downloadPdf';
 import { SAMPLE_DATA } from '../utils/sampleData';
-import { PRICE_INR } from '../config';
+import { PRICE_INR, PRICE_INR_JD } from '../config';
 
 // ── Countdown: shows time until data self-destructs (created_at + 2h) ────────
 function CountdownTimer({ createdAt }) {
@@ -55,16 +56,19 @@ function CountdownTimer({ createdAt }) {
   );
 }
 
-export default function ResultPage({ resumeData, setResumeData, serverStatus, paymentEnabled = false, resumeSlug, isAdmin = false }) {
+export default function ResultPage({ resumeData, setResumeData, serverStatus, paymentEnabled = false, resumeSlug, isAdmin = false, hasJD = false }) {
   const navigate = useNavigate();
   const [styleId, setStyleId]             = useState(2);
   const [isPaid, setIsPaid]               = useState(false);
   const [showPayment, setShowPayment]     = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [editMode, setEditMode]           = useState(false);
+  const [showDlMenu, setShowDlMenu]       = useState(false);
+  const dlMenuRef                         = useRef(null);
 
-  const data   = resumeData || SAMPLE_DATA;
-  const isDemo = !resumeData;
+  const data     = resumeData || SAMPLE_DATA;
+  const isDemo   = !resumeData;
+  const activePrice = hasJD ? PRICE_INR_JD : PRICE_INR;
 
   // Admin always gets free access
   useEffect(() => {
@@ -80,17 +84,56 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus, pa
     }
   }, [isDemo, isPaid, isAdmin, paymentEnabled]);
 
-  const handleDownload = async () => {
+  const handleDownload = async (compressed = true) => {
     if (!isPaid) { setShowPayment(true); return; }
+    setShowDlMenu(false);
     setIsDownloading(true);
     try {
-      const slug = (data.name || 'resume').toLowerCase().replace(/\s+/g, '-');
-      const styleNames = ['ats', 'blueprint', 'classic'];
+      const styleNames = ['ats', 'blueprint', 'classic', 'professional'];
       const styleName = styleNames[styleId - 1] || 'style';
-      await downloadBlueprintPdf('blueprint-preview', `relak-${slug}.pdf`, styleName, data.name);
+      await downloadBlueprintPdf('blueprint-preview', null, styleName, data.name);
     } finally {
       setIsDownloading(false);
     }
+  };
+
+  const handleDownloadHQ = async () => {
+    if (!isPaid) { setShowPayment(true); return; }
+    setShowDlMenu(false);
+    setIsDownloading(true);
+    try {
+      const styleNames = ['ats', 'blueprint', 'classic', 'professional'];
+      const styleName = styleNames[styleId - 1] || 'style';
+      await downloadHighQualityPdf('blueprint-preview', styleName, data.name);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+    if (!isPaid) { setShowPayment(true); return; }
+    setShowDlMenu(false);
+    setIsDownloading(true);
+    try {
+      const styleNames = ['ats', 'blueprint', 'classic', 'professional'];
+      const styleName = styleNames[styleId - 1] || 'style';
+      await downloadDocx(data, styleName);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = e => { if (dlMenuRef.current && !dlMenuRef.current.contains(e.target)) setShowDlMenu(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const dlItemStyle = {
+    display: 'flex', alignItems: 'center', gap: 10,
+    width: '100%', padding: '10px 14px',
+    background: 'none', border: 'none', cursor: 'pointer',
+    fontFamily: "'JetBrains Mono',monospace", fontSize: 11,
+    color: 'var(--text)', textAlign: 'left',
   };
 
   const handleDataChange = (updated) => {
@@ -131,13 +174,55 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus, pa
                 </button>
               )}
               {isPaid ? (
-                <button onClick={handleDownload} disabled={isDownloading} className="btn-download">
-                  <Download size={14} />
-                  {isDownloading ? 'Rendering...' : 'Download PDF'}
-                </button>
+                <div ref={dlMenuRef} style={{ position: 'relative' }}>
+                  {/* Split download button */}
+                  <div style={{ display: 'flex', alignItems: 'stretch' }}>
+                    <button onClick={() => handleDownload(true)} disabled={isDownloading} className="btn-download" style={{ borderRadius: '2px 0 0 2px', borderRight: '1px solid rgba(255,255,255,0.15)' }}>
+                      <Download size={14} />
+                      {isDownloading ? 'Rendering...' : 'Download PDF'}
+                    </button>
+                    <button
+                      onClick={() => setShowDlMenu(m => !m)}
+                      disabled={isDownloading}
+                      className="btn-download"
+                      style={{ borderRadius: '0 2px 2px 0', padding: '9px 10px' }}
+                      aria-label="More download options"
+                    >
+                      <ChevronDown size={13} />
+                    </button>
+                  </div>
+                  {/* Dropdown */}
+                  {showDlMenu && (
+                    <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: 'var(--bg-card)', border: '1px solid var(--border-solid)', borderRadius: 2, boxShadow: '0 4px 16px var(--shadow)', zIndex: 100, minWidth: 240, overflow: 'hidden' }}>
+                      <button onClick={() => handleDownload()} style={dlItemStyle}>
+                        <Download size={12} />
+                        <div>
+                          <div style={{ fontWeight: 600 }}>Download PDF</div>
+                          <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 2 }}>Native text · ATS-safe · searchable</div>
+                        </div>
+                      </button>
+                      <div style={{ height: 1, background: 'var(--border)' }} />
+                      <button onClick={handleDownloadHQ} disabled={isDownloading} style={dlItemStyle}>
+                        <Download size={12} />
+                        <div>
+                          <div style={{ fontWeight: 600 }}>High Quality PDF</div>
+                          <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 2 }}>PNG lossless · scale 3× · pixel-perfect</div>
+                        </div>
+                      </button>
+                      <div style={{ height: 1, background: 'var(--border)' }} />
+                      <button onClick={handleDownloadDocx} disabled={isDownloading} style={dlItemStyle}>
+                        <Download size={12} />
+                        <div>
+                          <div style={{ fontWeight: 600 }}>Download DOCX</div>
+                          <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 2 }}>Editable Word document (.docx)</div>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <button onClick={() => setShowPayment(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 22px', background: 'var(--blue)', color: 'var(--gold)', fontFamily: "'JetBrains Mono',monospace", fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', borderRadius: 2, boxShadow: '0 3px 0 0 var(--blue-dark)' }}>
-                  <Lock size={13} /> Unlock for ₹{PRICE_INR}
+                  <Lock size={13} /> Unlock for ₹{activePrice}
                 </button>
               )}
             </div>
@@ -168,6 +253,7 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus, pa
               {styleId === 1 && <ATSPreview data={data} editable={editMode} onDataChange={handleDataChange} />}
               {styleId === 2 && <BlueprintPreview data={data} editable={editMode} onDataChange={handleDataChange} />}
               {styleId === 3 && <ClassicPreview data={data} editable={editMode} onDataChange={handleDataChange} />}
+              {styleId === 4 && <ProfessionalPreview data={data} editable={editMode} onDataChange={handleDataChange} />}
             </div>
 
             {!isPaid && (
@@ -179,7 +265,7 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus, pa
                     Unlock all 3 styles, inline editing, and unlimited PDF downloads.
                   </p>
                   <button onClick={() => setShowPayment(true)} style={{ width: '100%', padding: '13px', background: 'var(--blue)', color: 'var(--gold)', fontFamily: "'JetBrains Mono',monospace", fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer', borderRadius: 2, boxShadow: '0 4px 0 0 var(--blue-dark)' }}>
-                    Unlock for ₹{PRICE_INR}
+                    Unlock for ₹{activePrice}
                   </button>
                   <div style={{ marginTop: 10, fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: 'var(--text-dim)', letterSpacing: '0.05em' }}>One-time · No subscription · Lifetime access</div>
                 </div>
@@ -197,6 +283,8 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus, pa
           resumeName={data.name}
           portfolioSlug={resumeSlug}
           paymentEnabled={paymentEnabled}
+          price={activePrice}
+          hasJD={hasJD}
           onClose={() => setShowPayment(false)}
           onSuccess={() => { setIsPaid(true); setShowPayment(false); setEditMode(false); }}
         />

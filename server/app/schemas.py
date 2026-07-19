@@ -27,6 +27,10 @@ class Education(BaseModel):
     institution: str
     degree: str
     year: str
+    gpa: Optional[str] = Field(
+        default=None,
+        description="CGPA, GPA, or percentage if explicitly present in the resume. Null otherwise."
+    )
 
 class PortfolioData(BaseModel):
     # ── Personal details ──────────────────────────────────────────────────────
@@ -39,10 +43,6 @@ class PortfolioData(BaseModel):
     address: Optional[str] = Field(
         default=None,
         description="City/State or full address as written in the resume. Null if not present."
-    )
-    photo_url: Optional[str] = Field(
-        default=None,
-        description="URL or base64 of a photo if explicitly present in the resume. Null otherwise — do NOT invent one."
     )
     linkedin: Optional[str] = Field(
         default=None,
@@ -69,16 +69,6 @@ class PortfolioData(BaseModel):
     experience: List[Experience]
     projects: List[Project]
     education: List[Education]
-    tech_stack_icons: List[str] = Field(
-        description="5-8 Lucide-react icon names matching the candidate's actual tech stack. "
-                    "Use real icon names only: 'database', 'brain', 'code-2', 'server', 'cloud', "
-                    "'terminal', 'cpu', 'git-branch', 'layers', 'zap', 'box', 'globe'. "
-                    "Do NOT use generic words — these must be valid lucide-react component names."
-    )
-    style_id: int = Field(
-        default=2,
-        description="1: ATS Friendly, 2: Blueprint Aesthetic, 3: Classic Resume"
-    )
 
 class ResumeResponse(BaseModel):
     success: bool

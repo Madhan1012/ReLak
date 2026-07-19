@@ -196,7 +196,6 @@ job_description: <Optional: Text of job description for tailoring>
     "email": "string",
     "phone": "string | null",
     "address": "string | null",
-    "photo_url": "string | null",
     "linkedin": "string | null",
     "github": "string | null",
     "summary": "string",
@@ -209,10 +208,8 @@ job_description: <Optional: Text of job description for tailoring>
       { "title": "string", "description": "string", "technologies": ["string"], "link": "string | null" }
     ],
     "education": [
-      { "institution": "string", "degree": "string", "year": "string" }
-    ],
-    "tech_stack_icons": ["string"],
-    "style_id": 2
+      { "institution": "string", "degree": "string", "year": "string", "gpa": "string | null" }
+    ]
   }
 }
 ```
@@ -566,4 +563,3 @@ All queries use SQLAlchemy ORM — no raw SQL anywhere in the codebase.
 | LOW | `ResumeRepsonse` typo | Rename to `ResumeResponse` |
 | LOW | No upload retry | Exponential backoff |
 | LOW | No ARIA labels on icon buttons | Accessibility pass |
-| LOW | tech_stack_icons not editable | Add icon name editor in edit mode |

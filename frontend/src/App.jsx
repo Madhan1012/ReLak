@@ -1,21 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import UploadZone from './components/UploadZone';
 import ProcessingOverlay from './components/ProcessingOverlay';
-import ResultPage from './pages/ResultPage';
-import BuildPage from './pages/BuildPage';
-import AdminLogin from './pages/AdminLogin';
-import ContentPage from './pages/ContentPage';
 import { Rocket, PenLine, AlertTriangle } from 'lucide-react';
-import { API_BASE, ADMIN_PATH, PRICE_INR } from './config';
+import { API_BASE, ADMIN_PATH, PRICE_INR, PRICE_INR_JD } from './config';
 import { sanitizeResumeData } from './utils/sanitize';
+
+// ── Lazy-loaded routes — only fetched when user navigates there ───────────────
+const ResultPage   = lazy(() => import('./pages/ResultPage'));
+const BuildPage    = lazy(() => import('./pages/BuildPage'));
+const AdminLogin   = lazy(() => import('./pages/AdminLogin'));
+const ContentPage  = lazy(() => import('./pages/ContentPage'));
+
+function PageSpinner() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+      <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--text-dim)', letterSpacing: '0.1em' }}>
+        Loading...
+      </span>
+    </div>
+  );
+}
 
 export default function App() {
   const [resumeData, setResumeData]         = useState(null);
   const [resumeSlug, setResumeSlug]         = useState(null);
+  const [hasJD, setHasJD]                   = useState(false);
   const [serverStatus, setServerStatus]     = useState('checking');
-  const [paymentEnabled, setPaymentEnabled] = useState(null); // null = loading, true/false from server
+  const [paymentEnabled, setPaymentEnabled] = useState(null);
   const [isAdmin, setIsAdmin]               = useState(() => !!sessionStorage.getItem('relak-admin'));
 
   // On tab close: fire beacon to delete unpaid session data from DB + clear state
@@ -63,33 +76,37 @@ export default function App() {
 
   return (
     <>
-      {/* ── Dev banner ── */}
-      <div style={{
-        position: 'fixed', bottom: 16, left: 16, zIndex: 9999,
-        background: '#ba1a1a', color: '#ffffff',
-        fontFamily: "'JetBrains Mono', monospace", fontSize: 9,
-        letterSpacing: '0.12em', textTransform: 'uppercase',
-        padding: '5px 10px',
-        display: 'flex', alignItems: 'center', gap: 6,
-        boxShadow: '0 2px 8px rgba(186,26,26,0.4)',
-        pointerEvents: 'none',
-      }}>
-        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', opacity: 0.8, animation: 'pulse 1.5s ease-in-out infinite', flexShrink: 0 }} />
-        Under Development
-      </div>
+      {/* ── Dev banner — hidden in production via VITE_SHOW_DEV_BANNER=false ── */}
+      {import.meta.env.VITE_SHOW_DEV_BANNER !== 'false' && (
+        <div style={{
+          position: 'fixed', bottom: 16, left: 16, zIndex: 9999,
+          background: '#ba1a1a', color: '#ffffff',
+          fontFamily: "'JetBrains Mono', monospace", fontSize: 9,
+          letterSpacing: '0.12em', textTransform: 'uppercase',
+          padding: '5px 10px',
+          display: 'flex', alignItems: 'center', gap: 6,
+          boxShadow: '0 2px 8px rgba(186,26,26,0.4)',
+          pointerEvents: 'none',
+        }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', opacity: 0.8, animation: 'pulse 1.5s ease-in-out infinite', flexShrink: 0 }} />
+          Under Development
+        </div>
+      )}
 
-      <Routes>
-        <Route path="/"       element={<HeroPage serverStatus={serverStatus} onResult={(data, slug) => { setResumeData(data); setResumeSlug(slug); }} />} />
-        <Route path="/result" element={<ResultPage resumeData={resumeData} setResumeData={setResumeData} serverStatus={serverStatus} paymentEnabled={paymentEnabled} resumeSlug={resumeSlug} isAdmin={isAdmin} />} />
-        <Route path="/build"  element={<BuildPage onResult={(data, slug) => { setResumeData(data); setResumeSlug(slug); }} serverStatus={serverStatus} />} />
-        <Route path="/privacy" element={<ContentPage pageKey="privacy" serverStatus={serverStatus} />} />
-        <Route path="/support" element={<ContentPage pageKey="support" serverStatus={serverStatus} />} />
-        <Route path="/about"   element={<ContentPage pageKey="about"   serverStatus={serverStatus} />} />
-        <Route path="/terms"   element={<ContentPage pageKey="privacy" serverStatus={serverStatus} />} />
-        <Route path="/refund"  element={<ContentPage pageKey="refund"  serverStatus={serverStatus} />} />
-        <Route path="/home/admins-login" element={<AdminLogin />} />
-        {ADMIN_PATH !== '/home/admins-login' && <Route path={ADMIN_PATH} element={<AdminLogin />} />}
-      </Routes>
+      <Suspense fallback={<PageSpinner />}>
+        <Routes>
+          <Route path="/"       element={<HeroPage serverStatus={serverStatus} onResult={(data, slug, jd) => { setResumeData(data); setResumeSlug(slug); setHasJD(!!jd); }} />} />
+          <Route path="/result" element={<ResultPage resumeData={resumeData} setResumeData={setResumeData} serverStatus={serverStatus} paymentEnabled={paymentEnabled} resumeSlug={resumeSlug} isAdmin={isAdmin} hasJD={hasJD} />} />
+          <Route path="/build"  element={<BuildPage onResult={(data, slug) => { setResumeData(data); setResumeSlug(slug); }} serverStatus={serverStatus} />} />
+          <Route path="/privacy" element={<ContentPage pageKey="privacy" serverStatus={serverStatus} />} />
+          <Route path="/support" element={<ContentPage pageKey="support" serverStatus={serverStatus} />} />
+          <Route path="/about"   element={<ContentPage pageKey="about"   serverStatus={serverStatus} />} />
+          <Route path="/terms"   element={<ContentPage pageKey="privacy" serverStatus={serverStatus} />} />
+          <Route path="/refund"  element={<ContentPage pageKey="refund"  serverStatus={serverStatus} />} />
+          <Route path="/home/admins-login" element={<AdminLogin />} />
+          {ADMIN_PATH !== '/home/admins-login' && <Route path={ADMIN_PATH} element={<AdminLogin />} />}
+        </Routes>
+      </Suspense>
     </>
   );
 }
@@ -121,7 +138,7 @@ function HeroPage({ serverStatus, onResult }) {
         const res  = await fetch(`${API_BASE}/upload`, { method: 'POST', body: fd });
         const json = await res.json();
         if (!res.ok || !json.success) throw new Error(json.error || json.detail || 'Upload failed');
-        onResult(sanitizeResumeData(json.data), json.slug);
+        onResult(sanitizeResumeData(json.data), json.slug, jobDescription);
         navigate('/result');
         setIsLoading(false);
         return;

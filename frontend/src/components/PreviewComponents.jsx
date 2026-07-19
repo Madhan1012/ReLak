@@ -37,13 +37,15 @@ export function E({ value, onChange, editable, style, tag: Tag = 'span', placeho
   );
 }
 
-/** Editable comma-separated chip list */
+/** Editable pipe-delimited skill list. Non-editable renders as plain text. */
 export function EditableChips({ items, onChange, editable, chipClass = "skill-chip" }) {
   if (!editable) {
+    // Plain text with pipe delimiter — no pill boxes, fully ATS-parseable
+    const text = items.filter(Boolean).join(' | ');
     return (
-      <div className="skills-wrap">
-        {items.map((s, i) => <span key={i} className={chipClass}>{s}</span>)}
-      </div>
+      <p style={{ fontFamily: 'inherit', fontSize: 'inherit', color: 'inherit', lineHeight: 1.6, margin: 0, wordBreak: 'break-word' }}>
+        {text}
+      </p>
     );
   }
   return (

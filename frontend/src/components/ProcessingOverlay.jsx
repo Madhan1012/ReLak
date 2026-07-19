@@ -6,7 +6,7 @@ const STEPS = [
   { id: 3, label: 'Running two-pass AI extraction',  detail: 'Pass 1: raw fact extraction from source...' },
   { id: 4, label: 'Improving with power-verbs',      detail: 'Pass 2: rewriting bullets — Action + Task + Result...' },
   { id: 5, label: 'Self-checking for hallucinations',detail: 'Verifying every claim against source document...' },
-  { id: 6, label: 'Assigning tech stack icons',      detail: 'Mapping technologies to Lucide-react icons...' },
+  { id: 6, label: 'Formatting layout',              detail: 'Applying resume style and section structure...' },
   { id: 7, label: 'Finalising blueprint',            detail: 'Structuring JSON output and validating schema...' },
 ];
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, CreditCard, CheckCircle, Lock, Shield, AlertTriangle } from 'lucide-react';
-import { API_BASE, PRICE_INR } from '../config';
+import { API_BASE } from '../config';
 
 /**
  * PaymentModal
@@ -27,7 +27,8 @@ const DEMO_STEPS = [
   { label: 'Confirming payment...',             ms: 400  },
 ];
 
-export default function PaymentModal({ onClose, onSuccess, resumeName, portfolioSlug, paymentEnabled }) {
+export default function PaymentModal({ onClose, onSuccess, resumeName, portfolioSlug, paymentEnabled, price, hasJD }) {
+  const effectivePrice = price ?? 21;
   const [step, setStep]           = useState('confirm');  // confirm | processing | success | error
   const [procStep, setProcStep]   = useState(-1);
   const [doneSteps, setDoneSteps] = useState([]);
@@ -95,7 +96,7 @@ export default function PaymentModal({ onClose, onSuccess, resumeName, portfolio
       const orderRes = await fetch(`${API_BASE}/payment/create-order`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ portfolio_slug: portfolioSlug, amount: PRICE_INR * 100 }),
+        body:    JSON.stringify({ portfolio_slug: portfolioSlug, amount: effectivePrice * 100 }),
       });
       const order = await orderRes.json();
       if (!orderRes.ok || !order.id) throw new Error(order.detail || 'Order creation failed');
@@ -169,8 +170,9 @@ export default function PaymentModal({ onClose, onSuccess, resumeName, portfolio
                 'Inline editing — click any field to change it',
                 'Unlimited PDF downloads',
                 'AI power-verb optimisation included',
-              ].map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: i < 3 ? 8 : 0 }}>
+                ...(hasJD ? ['JD Match Score — see how well your resume fits'] : []),
+              ].map((item, i, arr) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: i < arr.length - 1 ? 8 : 0 }}>
                   <span style={{ color: '#006e2f', fontSize: 12, flexShrink: 0 }}>✓</span>
                   <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: '#43474f' }}>{item}</span>
                 </div>
@@ -180,9 +182,18 @@ export default function PaymentModal({ onClose, onSuccess, resumeName, portfolio
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: '1px solid #e8e8e8', borderBottom: '1px solid #e8e8e8', marginBottom: 20 }}>
               <div>
                 <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: '#43474f', display: 'block' }}>Total (one-time)</span>
-                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: '#737780', marginTop: 2, display: 'block' }}>Per resume — not per style</span>
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: '#737780', marginTop: 2, display: 'block' }}>
+                  {hasJD ? 'Resume + JD Match Score' : 'Per resume — not per style'}
+                </span>
               </div>
-              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 24, fontWeight: 700, color: '#001e40' }}>₹{PRICE_INR}</span>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 24, fontWeight: 700, color: '#001e40' }}>₹{effectivePrice}</span>
+                {hasJD && (
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: '#006e2f', display: 'block', marginTop: 2 }}>
+                    ₹21 base + ₹4 match score
+                  </span>
+                )}
+              </div>
             </div>
 
             {!paymentEnabled && (
@@ -202,7 +213,7 @@ export default function PaymentModal({ onClose, onSuccess, resumeName, portfolio
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
               boxShadow: '0 4px 0 0 #001e40', borderRadius: 2,
             }}>
-              <CreditCard size={16} /> Pay ₹{PRICE_INR} via Razorpay
+              <CreditCard size={16} /> Pay ₹{effectivePrice} via Razorpay
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12 }}>

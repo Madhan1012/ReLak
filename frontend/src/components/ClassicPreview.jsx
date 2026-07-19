@@ -72,7 +72,6 @@ function MainSection({ title, children, onAdd, editable }) {
 export default function ClassicPreview({ data, editable = false, onDataChange }) {
   if (!data) return null;
 
-  const hasPhoto = !!data.photo_url;
   const techSkills = data.technical_skills ?? data.skills ?? [];
   const softSkills = data.soft_skills ?? [];
 
@@ -91,7 +90,7 @@ export default function ClassicPreview({ data, editable = false, onDataChange })
 
   const addExp  = () => onDataChange && onDataChange({ ...data, experience: [...(data.experience || []), { company: '', role: '', duration: '', highlights: [''] }] });
   const addProj = () => onDataChange && onDataChange({ ...data, projects: [...(data.projects || []), { title: '', description: '', technologies: [], link: null }] });
-  const addEdu  = () => onDataChange && onDataChange({ ...data, education: [...(data.education || []), { institution: '', degree: '', year: '' }] });
+  const addEdu  = () => onDataChange && onDataChange({ ...data, education: [...(data.education || []), { institution: '', degree: '', year: '', gpa: '' }] });
   const removeExp  = i => onDataChange && onDataChange({ ...data, experience: data.experience.filter((_, j) => j !== i) });
   const removeProj = i => onDataChange && onDataChange({ ...data, projects: data.projects.filter((_, j) => j !== i) });
   const removeEdu  = i => onDataChange && onDataChange({ ...data, education: data.education.filter((_, j) => j !== i) });
@@ -123,22 +122,6 @@ export default function ClassicPreview({ data, editable = false, onDataChange })
         flexDirection: 'column',
         minHeight: A4_H,
       }}>
-
-        {/* Photo — only if present in resume */}
-        {hasPhoto && (
-          <div style={{ marginBottom: 20, textAlign: 'center' }}>
-            <img
-              src={data.photo_url}
-              alt={data.name}
-              style={{
-                width: 90, height: 90,
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: `3px solid ${GOLD}`,
-              }}
-            />
-          </div>
-        )}
 
         {/* Name + title block */}
         <div style={{ marginBottom: 20 }}>
@@ -279,21 +262,30 @@ export default function ClassicPreview({ data, editable = false, onDataChange })
                   fontSize: 11, color: MUTED,
                   lineHeight: 1.6, margin: '0 0 4px',
                 }} value={proj.description} onChange={v => patch(`projects.${i}.description`, v)} editable={editable} />
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px 5px' }}>
-                  {(proj.technologies || []).map((t, j) => (
-                    <span key={j} style={{
-                      fontFamily: "'Courier New', monospace",
-                      fontSize: 9, border: `1px solid ${RULE}`,
-                      padding: '1px 6px', color: MUTED, display: 'flex', alignItems: 'center', gap: 4
-                    }}>
-                      <E value={t} onChange={v => {
-                        const t2 = [...proj.technologies]; t2[j] = v; patch(`projects.${i}.technologies`, t2);
-                      }} editable={editable} />
-                      {editable && <button onClick={() => patch(`projects.${i}.technologies`, proj.technologies.filter((_, k) => k !== j))} style={{ background: 'none', border: 'none', color: '#ff4d4f', cursor: 'pointer', padding: 0 }}><Trash2 size={8} /></button>}
-                    </span>
-                  ))}
-                  {editable && <button onClick={() => patch(`projects.${i}.technologies`, [...proj.technologies, ''])} style={{ background: 'none', border: 'none', color: NAVY, cursor: 'pointer', fontFamily: "'Georgia', serif", fontSize: 9 }}><Plus size={10} /></button>}
-                </div>
+                {/* Technologies as plain text — no floating badge row */}
+                {editable ? (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px 5px' }}>
+                    {(proj.technologies || []).map((t, j) => (
+                      <span key={j} style={{
+                        fontFamily: "'Courier New', monospace",
+                        fontSize: 9, border: `1px solid ${RULE}`,
+                        padding: '1px 6px', color: MUTED, display: 'flex', alignItems: 'center', gap: 4
+                      }}>
+                        <E value={t} onChange={v => {
+                          const t2 = [...proj.technologies]; t2[j] = v; patch(`projects.${i}.technologies`, t2);
+                        }} editable={editable} />
+                        {editable && <button onClick={() => patch(`projects.${i}.technologies`, proj.technologies.filter((_, k) => k !== j))} style={{ background: 'none', border: 'none', color: '#ff4d4f', cursor: 'pointer', padding: 0 }}><Trash2 size={8} /></button>}
+                      </span>
+                    ))}
+                    {editable && <button onClick={() => patch(`projects.${i}.technologies`, [...proj.technologies, ''])} style={{ background: 'none', border: 'none', color: NAVY, cursor: 'pointer', fontFamily: "'Georgia', serif", fontSize: 9 }}><Plus size={10} /></button>}
+                  </div>
+                ) : (
+                  proj.technologies?.length > 0 && (
+                    <p style={{ fontFamily: "'Courier New', monospace", fontSize: 9.5, color: MUTED, margin: '2px 0 0', lineHeight: 1.5 }}>
+                      {proj.technologies.filter(Boolean).join(' | ')}
+                    </p>
+                  )
+                )}
               </div>
             ))}
           </div>
@@ -310,6 +302,7 @@ export default function ClassicPreview({ data, editable = false, onDataChange })
                   <E style={{ fontFamily: "'Courier New', monospace", fontSize: 10, color: '#888888' }} value={edu.year} onChange={v => patch(`education.${i}.year`, v)} editable={editable} />
                 </div>
                 <E tag="div" style={{ fontFamily: "'Georgia', serif", fontSize: 11, color: MUTED }} value={edu.institution} onChange={v => patch(`education.${i}.institution`, v)} editable={editable} />
+                {edu.gpa && <E tag="div" style={{ fontFamily: "'Courier New', monospace", fontSize: 9, color: '#888888', marginTop: 2 }} value={`CGPA: ${edu.gpa}`} onChange={v => patch(`education.${i}.gpa`, v)} editable={editable} />}
               </div>
             ))}
           </div>

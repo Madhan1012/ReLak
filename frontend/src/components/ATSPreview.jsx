@@ -32,7 +32,7 @@ export default function ATSPreview({ data, editable = false, onDataChange }) {
 
   const addExp  = () => onDataChange && onDataChange({ ...data, experience: [...(data.experience || []), { company: '', role: '', duration: '', highlights: [''] }] });
   const addProj = () => onDataChange && onDataChange({ ...data, projects: [...(data.projects || []), { title: '', description: '', technologies: [], link: null }] });
-  const addEdu  = () => onDataChange && onDataChange({ ...data, education: [...(data.education || []), { institution: '', degree: '', year: '' }] });
+  const addEdu  = () => onDataChange && onDataChange({ ...data, education: [...(data.education || []), { institution: '', degree: '', year: '', gpa: '' }] });
   const removeExp  = i => onDataChange && onDataChange({ ...data, experience: data.experience.filter((_, j) => j !== i) });
   const removeProj = i => onDataChange && onDataChange({ ...data, projects: data.projects.filter((_, j) => j !== i) });
   const removeEdu  = i => onDataChange && onDataChange({ ...data, education: data.education.filter((_, j) => j !== i) });
@@ -151,7 +151,16 @@ export default function ATSPreview({ data, editable = false, onDataChange }) {
               </span>
             </div>
             <E tag="p" style={{ ...s.projDesc, margin: '4px 0' }} value={proj.description} onChange={v => patch(`projects.${i}.description`, v)} editable={editable} />
-            <EditableChips items={proj.technologies || []} onChange={v => patch(`projects.${i}.technologies`, v)} editable={editable} chipClass="ats-chip" />
+            {/* Technologies as plain text — no pill badges */}
+            {(proj.technologies?.length > 0 || editable) && (
+              editable ? (
+                <EditableChips items={proj.technologies || []} onChange={v => patch(`projects.${i}.technologies`, v)} editable={editable} chipClass="ats-chip" />
+              ) : (
+                <p style={{ fontFamily: "'Courier New', monospace", fontSize: 9.5, color: '#555555', margin: '3px 0 0', lineHeight: 1.5 }}>
+                  {(proj.technologies || []).filter(Boolean).join(' | ')}
+                </p>
+              )
+            )}
             {i < data.projects.length - 1 && <div style={s.thinRule} />}
           </div>
         ))}
@@ -169,6 +178,7 @@ export default function ATSPreview({ data, editable = false, onDataChange }) {
             <div>
               <E style={s.role} value={edu.degree} onChange={v => patch(`education.${i}.degree`, v)} editable={editable} />
               <E tag="div" style={s.company} value={edu.institution} onChange={v => patch(`education.${i}.institution`, v)} editable={editable} />
+              {edu.gpa && <E tag="div" style={{ fontSize: 10, color: '#666666', fontFamily: "'Courier New', monospace" }} value={`CGPA: ${edu.gpa}`} onChange={v => patch(`education.${i}.gpa`, v)} editable={editable} />}
             </div>
             <E style={s.duration} value={edu.year} onChange={v => patch(`education.${i}.year`, v)} editable={editable} />
           </div>

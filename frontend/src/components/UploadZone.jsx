@@ -34,10 +34,15 @@ export default function UploadZone({ onFileSelect, onJobDescriptionChange, isLoa
 
       <div
         className={`upload-zone${isDragging ? ' dragging' : ''}${isLoading ? ' loading' : ''}`}
-        onClick={() => !isLoading && inputRef.current?.click()}
+        onClick={() => { if (!isLoading && inputRef.current) inputRef.current.click(); }}
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
-        onDrop={onDrop}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragging(false);
+          const file = e.dataTransfer.files?.[0];
+          if (file) handleFile(file);
+        }}
       >
         <input
           ref={inputRef}
@@ -61,8 +66,8 @@ export default function UploadZone({ onFileSelect, onJobDescriptionChange, isLoa
               {selectedFile ? selectedFile.name : 'Drag-and-drop or click to upload'}
             </p>
             <p className="upload-sub">
-              Supported formats: .PDF, .DOCX (Max 2MB).<br />
-              Your data is used only for parsing.
+              Supported: .PDF, .DOCX (Max 2MB).<br />
+              Drag & drop or click to upload.
             </p>
           </>
         )}

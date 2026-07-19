@@ -41,7 +41,7 @@ export default function BlueprintPreview({ data, editable = false, onDataChange 
 
   const addExp  = () => onDataChange && onDataChange({ ...data, experience: [...(data.experience || []), { company: '', role: '', duration: '', highlights: [''] }] });
   const addProj = () => onDataChange && onDataChange({ ...data, projects: [...(data.projects || []), { title: '', description: '', technologies: [], link: null }] });
-  const addEdu  = () => onDataChange && onDataChange({ ...data, education: [...(data.education || []), { institution: '', degree: '', year: '' }] });
+  const addEdu  = () => onDataChange && onDataChange({ ...data, education: [...(data.education || []), { institution: '', degree: '', year: '', gpa: '' }] });
   const removeExp  = i => onDataChange && onDataChange({ ...data, experience: data.experience.filter((_, j) => j !== i) });
   const removeProj = i => onDataChange && onDataChange({ ...data, projects: data.projects.filter((_, j) => j !== i) });
   const removeEdu  = i => onDataChange && onDataChange({ ...data, education: data.education.filter((_, j) => j !== i) });
@@ -187,9 +187,19 @@ export default function BlueprintPreview({ data, editable = false, onDataChange 
                 <E value={proj.title} editable={editable} onChange={v => patch(`projects.${i}.title`, v)}
                   style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--blue-dark)', marginBottom: 10, display: 'block' }} />
                 <E tag="p" value={proj.description} editable={editable} onChange={v => patch(`projects.${i}.description`, v)}
-                  style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 16 }} />
-                <EditableChips items={proj.technologies || []} editable={editable}
-                  onChange={v => patch(`projects.${i}.technologies`, v)} />
+                  style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: (proj.technologies?.length > 0 || editable) ? 8 : 0 }} />
+                {/* Technologies as plain text bullet — no floating badge rows */}
+                {(proj.technologies?.length > 0 || editable) && (
+                  editable ? (
+                    <EditableChips items={proj.technologies || []} editable={editable}
+                      onChange={v => patch(`projects.${i}.technologies`, v)} />
+                  ) : (
+                    <p style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.5, margin: 0 }}>
+                      <span style={{ color: 'var(--blue)', marginRight: 6 }}>→</span>
+                      {(proj.technologies || []).filter(Boolean).join(' | ')}
+                    </p>
+                  )
+                )}
               </div>
             ))}
           </div>
@@ -216,6 +226,8 @@ export default function BlueprintPreview({ data, editable = false, onDataChange 
                     style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--blue-dark)', marginBottom: 4, display: 'block' }} />
                   <E value={edu.institution} editable={editable} onChange={v => patch(`education.${i}.institution`, v)}
                     style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: 'var(--text-muted)', display: 'block' }} />
+                  {edu.gpa && <E value={`CGPA: ${edu.gpa}`} editable={editable} onChange={v => patch(`education.${i}.gpa`, v)}
+                    style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--text-dim)', display: 'block', marginTop: 2 }} />}
                 </div>
                 <E value={edu.year} editable={editable} onChange={v => patch(`education.${i}.year`, v)}
                   style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, background: 'var(--bg-highest)', padding: '4px 12px', color: 'var(--text-muted)' }} />
