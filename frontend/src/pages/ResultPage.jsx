@@ -109,6 +109,8 @@ export default function ResultPage({ resumeData, setResumeData, serverStatus, pa
       setIsDownloading(false);
     }
   };
+
+  const handleDownloadDocx = async () => {
     if (!isPaid) { setShowPayment(true); return; }
     setShowDlMenu(false);
     setIsDownloading(true);

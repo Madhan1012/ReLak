@@ -9,6 +9,11 @@ export default function UploadZone({ onFileSelect, onJobDescriptionChange, isLoa
 
   const handleFile = (file) => {
     if (!file) return;
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext !== 'pdf' && ext !== 'docx') {
+      alert('Only PDF and DOCX files are supported.');
+      return;
+    }
     setSelectedFile(file);
     onFileSelect(file);
   };
@@ -47,7 +52,7 @@ export default function UploadZone({ onFileSelect, onJobDescriptionChange, isLoa
         <input
           ref={inputRef}
           type="file"
-          accept=".pdf,.docx"
+          accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
           style={{ display: 'none' }}
           onChange={(e) => handleFile(e.target.files[0])}
         />
