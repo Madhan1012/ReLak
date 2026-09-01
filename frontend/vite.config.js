@@ -17,13 +17,25 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Core React runtime — cached aggressively
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          // PDF generation — only loaded on download
-          'vendor-pdf': ['jspdf', 'html2canvas'],
-          // Icons — separate so resume previews don't block landing page
-          'vendor-icons': ['lucide-react'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            // Core React runtime — cached aggressively
+            if (
+              id.includes('react') ||
+              id.includes('react-dom') ||
+              id.includes('react-router-dom')
+            ) {
+              return 'vendor-react'
+            }
+            // PDF generation — isolated heavy dependencies
+            if (id.includes('jspdf') || id.includes('html2canvas')) {
+              return 'vendor-pdf'
+            }
+            // Icons
+            if (id.includes('lucide-react')) {
+              return 'vendor-icons'
+            }
+          }
         },
       },
     },
