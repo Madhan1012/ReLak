@@ -1,8 +1,9 @@
 temp_uploads/
 demo_docs/
 notes.txt
-.env
-**/.env
+*.env
+*.env.*
+*.sync-conflict-*
 __pycache__/
 rel/
 .gitignore
@@ -31,3 +32,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+notes.txt
+REPORT.md
+ReLak_Interview_Prep.html
+ReLak_Interview_Preparation_Guide.md
